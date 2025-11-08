@@ -300,6 +300,193 @@ class NavigableComboBox(NoWheelComboBox):
         else:
             super().keyPressEvent(event)
 
+class LoginDialog(QDialog):
+    """Login dialog for user authentication"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Login - Faizan Academy Report System")
+        self.setGeometry(400, 250, 400, 350)
+        self.setModal(True)
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #f8fbff;
+                border: 2px solid #3498db;
+                border-radius: 10px;
+            }
+            QLabel {
+                color: #2c3e50;
+                font-size: 12px;
+            }
+            QLabel#titleLabel {
+                color: #3498db;
+                font-size: 20px;
+                font-weight: bold;
+                margin-bottom: 10px;
+            }
+            QLineEdit {
+                background-color: #ffffff;
+                border: 2px solid #e1e8ed;
+                border-radius: 8px;
+                padding: 10px;
+                color: #2c3e50;
+                font-size: 12px;
+                selection-background-color: #3498db;
+            }
+            QLineEdit:focus {
+                border: 2px solid #3498db;
+                background-color: #f8fbff;
+            }
+            QPushButton {
+                background-color: #3498db;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 10px 20px;
+                font-weight: bold;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #2980b9;
+            }
+            QPushButton:pressed {
+                background-color: #1f618d;
+            }
+            QPushButton#cancelBtn {
+                background-color: #95a5a6;
+            }
+            QPushButton#cancelBtn:hover {
+                background-color: #7f8c8d;
+            }
+        """)
+
+        layout = QVBoxLayout()
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(15)
+
+        # Logo and Title
+        header_layout = QVBoxLayout()
+        header_layout.setAlignment(Qt.AlignCenter)
+
+        # Logo
+        logo_label = QLabel()
+        logo_pixmap = QtGui.QPixmap("templates/faizan_academy_logo.png")
+        if not logo_pixmap.isNull():
+            scaled_logo = logo_pixmap.scaled(80, 80, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            logo_label.setPixmap(scaled_logo)
+        logo_label.setAlignment(Qt.AlignCenter)
+        header_layout.addWidget(logo_label)
+
+        # Title
+        title = QLabel("Faizan Academy")
+        title.setObjectName("titleLabel")
+        title.setAlignment(Qt.AlignCenter)
+        header_layout.addWidget(title)
+
+        subtitle = QLabel("Report Card Management System")
+        subtitle.setStyleSheet("color: #7f8c8d; font-size: 11px;")
+        subtitle.setAlignment(Qt.AlignCenter)
+        header_layout.addWidget(subtitle)
+
+        layout.addLayout(header_layout)
+
+        # Username
+        username_layout = QVBoxLayout()
+        username_label = QLabel("Username")
+        username_label.setStyleSheet("font-weight: bold;")
+        username_layout.addWidget(username_label)
+        self.username_input = QLineEdit()
+        self.username_input.setPlaceholderText("Enter your username")
+        username_layout.addWidget(self.username_input)
+        layout.addLayout(username_layout)
+
+        # Password
+        password_layout = QVBoxLayout()
+        password_label = QLabel("Password")
+        password_label.setStyleSheet("font-weight: bold;")
+        password_layout.addWidget(password_label)
+        self.password_input = QLineEdit()
+        self.password_input.setEchoMode(QLineEdit.Password)
+        self.password_input.setPlaceholderText("Enter your password")
+        password_layout.addWidget(self.password_input)
+        layout.addLayout(password_layout)
+
+        # Error label
+        self.error_label = QLabel("")
+        self.error_label.setStyleSheet("color: #e74c3c; font-size: 11px; text-align: center;")
+        self.error_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.error_label)
+
+        # Buttons
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(10)
+
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.setObjectName("cancelBtn")
+        cancel_btn.clicked.connect(self.reject)
+        btn_layout.addWidget(cancel_btn)
+
+        login_btn = QPushButton("Login")
+        login_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #3498db;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 12px 25px;
+                font-weight: bold;
+                font-size: 13px;
+                min-width: 100px;
+            }
+            QPushButton:hover {
+                background-color: #2980b9;
+            }
+            QPushButton:pressed {
+                background-color: #1f618d;
+            }
+        """)
+        login_btn.clicked.connect(self.authenticate)
+        login_btn.setDefault(True)
+        btn_layout.addWidget(login_btn)
+
+        layout.addLayout(btn_layout)
+
+        self.setLayout(layout)
+
+        # Connect enter key
+        self.username_input.returnPressed.connect(self.password_input.setFocus)
+        self.password_input.returnPressed.connect(self.authenticate)
+
+    def authenticate(self):
+        username = self.username_input.text().strip()
+        password = self.password_input.text().strip()
+
+        if not username or not password:
+            self.error_label.setText("Please enter both username and password")
+            return
+
+        try:
+            import sqlite3
+            conn = sqlite3.connect("report_system.db")
+            cursor = conn.cursor()
+
+            cursor.execute(
+                "SELECT user_id, role FROM users WHERE username = ? AND password = ? AND is_active = 1",
+                (username, password)
+            )
+            user = cursor.fetchone()
+            conn.close()
+
+            if user:
+                self.user_id = user[0]
+                self.user_role = user[1]
+                self.accept()
+            else:
+                self.error_label.setText("Invalid username or password")
+
+        except Exception as e:
+            self.error_label.setText(f"Database error: {str(e)}")
+
 class ConfigManager:
     """Manages application settings"""
 
@@ -962,10 +1149,11 @@ class MainWindow(NavigableMainWindow):
         for subject, row in self.marks_inputs.items():
             row["coursework"].clear()
             row["termexam"].clear()
-            row["absent"].setChecked(False)  # *** ADD THIS LINE ***
-            row["coursework"].setEnabled(True)  # *** ADD THIS LINE ***
-            row["termexam"].setEnabled(True)  # *** ADD THIS LINE ***
-            row["maxmarks"].setEnabled(True)  # *** ADD THIS LINE ***
+            row["cw_absent"].setChecked(False)
+            row["te_absent"].setChecked(False)
+            row["coursework"].setEnabled(True)
+            row["termexam"].setEnabled(True)
+            row["maxmarks"].setEnabled(True)
 
         self.update_grand_totals()
 
@@ -1355,8 +1543,8 @@ class MainWindow(NavigableMainWindow):
         header_layout.setSpacing(5)
         header_layout.setContentsMargins(0, 0, 0, 0)
 
-        headers = ["Subject", "Course Work", "Term Exam", "Max", "Obt", "%", "Grade", "Absent"]
-        widths = [120, 100, 100, 70, 70, 70, 70, 80]
+        headers = ["Subject", "Course Work", "Term Exam", "Max", "Obt", "%", "Grade", "CW Absent", "TE Absent"]
+        widths = [120, 100, 100, 70, 70, 70, 70, 80, 80]
 
         for header_text, width in zip(headers, widths):
             header = QLabel(header_text)
@@ -1452,13 +1640,21 @@ class MainWindow(NavigableMainWindow):
             row_layout.addWidget(grade_label)
             row_data["grade"] = grade_label
 
-            # *** ABSENT CHECKBOX ***
-            absent_cb = QCheckBox("Absent")
-            absent_cb.setMinimumWidth(80)
-            absent_cb.setMaximumWidth(80)
-            absent_cb.stateChanged.connect(lambda state, s=subject: self.handle_absent_toggle(s, state))
-            row_layout.addWidget(absent_cb)
-            row_data["absent"] = absent_cb
+            # *** CW ABSENT CHECKBOX ***
+            cw_absent_cb = QCheckBox("CW")
+            cw_absent_cb.setMinimumWidth(80)
+            cw_absent_cb.setMaximumWidth(80)
+            cw_absent_cb.stateChanged.connect(lambda state, s=subject: self.handle_cw_absent_toggle(s, state))
+            row_layout.addWidget(cw_absent_cb)
+            row_data["cw_absent"] = cw_absent_cb
+
+            # *** TE ABSENT CHECKBOX ***
+            te_absent_cb = QCheckBox("TE")
+            te_absent_cb.setMinimumWidth(80)
+            te_absent_cb.setMaximumWidth(80)
+            te_absent_cb.stateChanged.connect(lambda state, s=subject: self.handle_te_absent_toggle(s, state))
+            row_layout.addWidget(te_absent_cb)
+            row_data["te_absent"] = te_absent_cb
 
             row_layout.addStretch()
 
@@ -1549,7 +1745,8 @@ class MainWindow(NavigableMainWindow):
             widgets_order.append(row["coursework"])
             widgets_order.append(row["termexam"])
             widgets_order.append(row["maxmarks"])
-            widgets_order.append(row["absent"])  # Add absent checkbox to navigation
+            widgets_order.append(row["cw_absent"])  # Add CW absent checkbox to navigation
+            widgets_order.append(row["te_absent"])  # Add TE absent checkbox to navigation
 
         widgets_order.extend([
             self.conduct_combo,
@@ -1575,49 +1772,43 @@ class MainWindow(NavigableMainWindow):
 
         self.register_widgets(widgets_order)
 
-    def handle_absent_toggle(self, subject, state):
-        """Handle when absent checkbox is toggled"""
+    def handle_cw_absent_toggle(self, subject, state):
+        """Handle when CW absent checkbox is toggled"""
         if subject not in self.marks_inputs:
             return
 
         row = self.marks_inputs[subject]
-        is_absent = (state == Qt.Checked)
+        is_cw_absent = (state == Qt.Checked)
 
-        if is_absent:
-            # Disable mark inputs and clear them
+        if is_cw_absent:
+            # Disable CW input and clear it
             row["coursework"].setEnabled(False)
-            row["termexam"].setEnabled(False)
-            row["maxmarks"].setEnabled(False)
             row["coursework"].clear()
-            row["termexam"].clear()
-
-            # Set all display fields to "Absent"
-            row["obt"].setText("Absent")
-            row["pct"].setText("Absent")
-            row["grade"].setText("Absent")
-
-            # Style for absent
-            row["obt"].setStyleSheet("color: #e74c3c; font-weight: bold; font-style: italic;")
-            row["pct"].setStyleSheet("color: #e74c3c; font-weight: bold; font-style: italic;")
-            row["grade"].setStyleSheet("color: #e74c3c; font-weight: bold; font-style: italic; background-color: #ffe6e6; border-radius: 4px; padding: 2px;")
         else:
-            # Enable mark inputs
+            # Enable CW input
             row["coursework"].setEnabled(True)
+
+        # Update calculations
+        self.validate_marks_sum(subject)
+
+    def handle_te_absent_toggle(self, subject, state):
+        """Handle when TE absent checkbox is toggled"""
+        if subject not in self.marks_inputs:
+            return
+
+        row = self.marks_inputs[subject]
+        is_te_absent = (state == Qt.Checked)
+
+        if is_te_absent:
+            # Disable TE input and clear it
+            row["termexam"].setEnabled(False)
+            row["termexam"].clear()
+        else:
+            # Enable TE input
             row["termexam"].setEnabled(True)
-            row["maxmarks"].setEnabled(True)
 
-            # Reset to default values
-            row["obt"].setText("0")
-            row["pct"].setText("0%")
-            row["grade"].setText("-")
-
-            # Reset styles
-            row["obt"].setStyleSheet("color: #3498db; font-weight: bold;")
-            row["pct"].setStyleSheet("color: #2980b9; font-weight: bold;")
-            row["grade"].setStyleSheet("color: #27ae60; font-weight: bold; background-color: #d5f4e6; border-radius: 4px; padding: 2px;")
-
-        # Update grand totals
-        self.update_grand_totals()
+        # Update calculations
+        self.validate_marks_sum(subject)
 
     def validate_marks_sum(self, subject):
         """Validate and update marks with percentage and grade calculation"""
@@ -1626,62 +1817,89 @@ class MainWindow(NavigableMainWindow):
 
         row = self.marks_inputs[subject]
 
-        # Skip validation if absent
-        if row["absent"].isChecked():
+        cw_absent = row["cw_absent"].isChecked()
+        te_absent = row["te_absent"].isChecked()
+
+        # If both are absent, set everything to "Absent"
+        if cw_absent and te_absent:
+            row["obt"].setText("Absent")
+            row["pct"].setText("Absent")
+            row["grade"].setText("Absent")
+            row["obt"].setStyleSheet("color: #e74c3c; font-weight: bold; font-style: italic;")
+            row["pct"].setStyleSheet("color: #e74c3c; font-weight: bold; font-style: italic;")
+            row["grade"].setStyleSheet("color: #e74c3c; font-weight: bold; font-style: italic; background-color: #ffe6e6; border-radius: 4px; padding: 2px;")
+            self.update_grand_totals()
             return
 
         try:
-            cw = float(row["coursework"].text() or 0)
-            te = float(row["termexam"].text() or 0)
+            cw = float(row["coursework"].text() or 0) if not cw_absent else 0
+            te = float(row["termexam"].text() or 0) if not te_absent else 0
             max_marks = float(row["maxmarks"].currentText())
-            obt = cw + te
+
+            # Calculate based on available marks
+            if cw_absent and not te_absent:
+                # Only TE available
+                obt = te
+                pct = (obt / max_marks * 100) if max_marks > 0 else 0
+            elif te_absent and not cw_absent:
+                # Only CW available
+                obt = cw
+                pct = (obt / max_marks * 100) if max_marks > 0 else 0
+            else:
+                # Both available
+                obt = cw + te
+                pct = (obt / max_marks * 100) if max_marks > 0 else 0
 
             row["obt"].setText(str(int(obt)))
-            pct = (obt / max_marks * 100) if max_marks > 0 else 0
             row["pct"].setText(f"{pct:.1f}%")
             grade = self.get_grade(pct)
             row["grade"].setText(grade)
 
+            # Styling
             if obt <= max_marks:
-                row["coursework"].setStyleSheet("""
-                    QLineEdit {
-                        background-color: #ffffff;
-                        border: 2px solid #e1e8ed;
-                        border-radius: 6px;
-                        padding: 8px;
-                        color: #2c3e50;
-                    }
-                """)
-                row["termexam"].setStyleSheet("""
-                    QLineEdit {
-                        background-color: #ffffff;
-                        border: 2px solid #e1e8ed;
-                        border-radius: 6px;
-                        padding: 8px;
-                        color: #2c3e50;
-                    }
-                """)
+                if not cw_absent:
+                    row["coursework"].setStyleSheet("""
+                        QLineEdit {
+                            background-color: #ffffff;
+                            border: 2px solid #e1e8ed;
+                            border-radius: 6px;
+                            padding: 8px;
+                            color: #2c3e50;
+                        }
+                    """)
+                if not te_absent:
+                    row["termexam"].setStyleSheet("""
+                        QLineEdit {
+                            background-color: #ffffff;
+                            border: 2px solid #e1e8ed;
+                            border-radius: 6px;
+                            padding: 8px;
+                            color: #2c3e50;
+                        }
+                    """)
                 row["obt"].setStyleSheet("color: #3498db; font-weight: bold;")
                 row["pct"].setStyleSheet("color: #2980b9; font-weight: bold;")
             else:
-                row["coursework"].setStyleSheet("""
-                    QLineEdit {
-                        background-color: #fff5f5;
-                        border: 2px solid #e74c3c;
-                        border-radius: 6px;
-                        padding: 8px;
-                        color: #2c3e50;
-                    }
-                """)
-                row["termexam"].setStyleSheet("""
-                    QLineEdit {
-                        background-color: #fff5f5;
-                        border: 2px solid #e74c3c;
-                        border-radius: 6px;
-                        padding: 8px;
-                        color: #2c3e50;
-                    }
-                """)
+                if not cw_absent:
+                    row["coursework"].setStyleSheet("""
+                        QLineEdit {
+                            background-color: #fff5f5;
+                            border: 2px solid #e74c3c;
+                            border-radius: 6px;
+                            padding: 8px;
+                            color: #2c3e50;
+                        }
+                    """)
+                if not te_absent:
+                    row["termexam"].setStyleSheet("""
+                        QLineEdit {
+                            background-color: #fff5f5;
+                            border: 2px solid #e74c3c;
+                            border-radius: 6px;
+                            padding: 8px;
+                            color: #2c3e50;
+                        }
+                    """)
                 row["obt"].setStyleSheet("color: #e74c3c; font-weight: bold; background-color: #ffe6e6; padding: 2px; border-radius: 2px;")
                 row["pct"].setStyleSheet("color: #e74c3c; font-weight: bold;")
 
@@ -1691,7 +1909,7 @@ class MainWindow(NavigableMainWindow):
             pass
 
     def update_grand_totals(self):
-        """Update grand total row - excludes absent subjects"""
+        """Update grand total row - excludes subjects where both marks are absent"""
         try:
             total_cw = 0
             total_te = 0
@@ -1699,22 +1917,21 @@ class MainWindow(NavigableMainWindow):
             total_obt = 0
 
             for subject, row in self.marks_inputs.items():
-                # Skip if absent
-                if row["absent"].isChecked():
+                cw_absent = row["cw_absent"].isChecked()
+                te_absent = row["te_absent"].isChecked()
+
+                # Skip if both are absent
+                if cw_absent and te_absent:
                     continue
 
-                cw_text = row["coursework"].text()
-                te_text = row["termexam"].text()
+                cw = float(row["coursework"].text() or 0) if not cw_absent else 0
+                te = float(row["termexam"].text() or 0) if not te_absent else 0
+                max_m = float(row["maxmarks"].currentText())
 
-                if cw_text and te_text:
-                    cw = float(cw_text)
-                    te = float(te_text)
-                    max_m = float(row["maxmarks"].currentText())
-
-                    total_cw += cw
-                    total_te += te
-                    total_max += max_m
-                    total_obt += cw + te
+                total_cw += cw
+                total_te += te
+                total_max += max_m
+                total_obt += cw + te
 
             self.grand_cw.setText(str(int(total_cw)))
             self.grand_te.setText(str(int(total_te)))
@@ -1808,8 +2025,11 @@ class MainWindow(NavigableMainWindow):
         placeholder = "-"
 
         for subject, row in self.marks_inputs.items():
-            # Check if absent
-            if row["absent"].isChecked():
+            cw_absent = row["cw_absent"].isChecked()
+            te_absent = row["te_absent"].isChecked()
+
+            if cw_absent and te_absent:
+                # Both absent
                 marks_data[subject] = {
                     "coursework": "Absent",
                     "termexam": "Absent",
@@ -1820,29 +2040,18 @@ class MainWindow(NavigableMainWindow):
                     "is_absent": True
                 }
             else:
-                cw = row["coursework"].text()
-                te = row["termexam"].text()
+                cw = row["coursework"].text() if not cw_absent else "Absent"
+                te = row["termexam"].text() if not te_absent else "Absent"
 
-                if not cw and not te:
-                    marks_data[subject] = {
-                        "coursework": placeholder,
-                        "termexam": placeholder,
-                        "maxmarks": placeholder,
-                        "obt": placeholder,
-                        "pct": placeholder,
-                        "grade": placeholder,
-                        "is_absent": False
-                    }
-                else:
-                    marks_data[subject] = {
-                        "coursework": cw or "0",
-                        "termexam": te or "0",
-                        "maxmarks": row["maxmarks"].currentText(),
-                        "obt": row["obt"].text(),
-                        "pct": row["pct"].text(),
-                        "grade": row["grade"].text(),
-                        "is_absent": False
-                    }
+                marks_data[subject] = {
+                    "coursework": cw or placeholder,
+                    "termexam": te or placeholder,
+                    "maxmarks": row["maxmarks"].currentText(),
+                    "obt": row["obt"].text(),
+                    "pct": row["pct"].text(),
+                    "grade": row["grade"].text(),
+                    "is_absent": False
+                }
 
         grand_totals = {
             "cw": self.grand_cw.text(),
@@ -1972,6 +2181,16 @@ class MainWindow(NavigableMainWindow):
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow()
-    sys.exit(app.exec())
+
+    # Show login dialog
+    login_dialog = LoginDialog()
+    if login_dialog.exec() == QDialog.Accepted:
+        # Login successful, show main window
+        window = MainWindow()
+        window.current_user_id = login_dialog.user_id
+        window.current_user_role = login_dialog.user_role
+        sys.exit(app.exec())
+    else:
+        # Login cancelled or failed
+        sys.exit(0)
 
