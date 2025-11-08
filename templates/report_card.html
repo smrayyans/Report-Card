@@ -119,25 +119,21 @@
                     {% for subject, marks in marks_data.items() %}
                     <tr>
                         <td>{{ subject }}</td>
-                        <!-- Handle coursework - show "Absent" if absent -->
-                        {% if marks.is_cw_absent %}
+                        {% if marks.is_absent %}
                         <td class="absent-text">Absent</td>
+                        <td class="absent-text">Absent</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
                         {% else %}
                         <td>{{ marks.coursework }}</td>
-                        {% endif %}
-
-                        <!-- Handle term exam - show "Absent" if absent -->
-                        {% if marks.is_te_absent %}
-                        <td class="absent-text">Absent</td>
-                        {% else %}
                         <td>{{ marks.termexam }}</td>
-                        {% endif %}
-
-                        <!-- Other columns -->
                         <td>{{ marks.maxmarks }}</td>
                         <td>{{ marks.obt }}</td>
                         <td>{{ marks.pct }}</td>
                         <td>{{ marks.grade }}</td>
+                        {% endif %}
                     </tr>
                     {% endfor %}
 
