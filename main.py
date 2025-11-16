@@ -2,12 +2,14 @@ import json
 import os
 import re
 from datetime import datetime
+import pandas as pd
 from PySide6 import QtWidgets, QtCore, QtGui
 from PySide6.QtCore import Qt, QDate, QTimer
 from PySide6.QtWidgets import (QMessageBox, QDialog, QVBoxLayout, QHBoxLayout,
                                QLineEdit, QPushButton, QListWidget, QListWidgetItem,
                                QCheckBox, QLabel, QComboBox, QSpinBox, QTableWidget,
-                               QTableWidgetItem, QDateEdit, QTabWidget, QScrollArea, QWidget)
+                               QTableWidgetItem, QDateEdit, QTabWidget, QScrollArea, QWidget,
+                               QHeaderView, QFileDialog)
 from PySide6.QtGui import QIcon, QFont, QColor
 
 # Modern Stylesheet
@@ -53,6 +55,29 @@ QComboBox::drop-down {
     border: none;
     background-color: transparent;
     width: 25px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #ffffff;
+    color: #000000;
+    selection-background-color: #3498db;
+    selection-color: #ffffff;
+    border: 1px solid #e1e8ed;
+    outline: none;
+}
+
+QComboBox QAbstractItemView::item {
+    color: #000000;
+    padding: 5px;
+    border: none;
+    outline: none;
+}
+
+QComboBox QAbstractItemView::item:selected {
+    background-color: #3498db;
+    color: #ffffff;
+    border: none;
+    outline: none;
 }
 
 QPushButton {
@@ -193,13 +218,21 @@ QTabBar::tab:hover {
 }
 
 QMenuBar {
-    background-color: #34495e;
-    color: white;
-    border-bottom: 2px solid #2c3e50;
+    background-color: #f5f5f5;
+    color: #2c3e50;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 2px;
+    font-size: 11px;
+}
+
+QMenuBar::item {
+    padding: 4px 12px;
+    background-color: transparent;
 }
 
 QMenuBar::item:selected {
-    background-color: #3498db;
+    background-color: #e0e0e0;
+    color: #2c3e50;
 }
 
 QMenu {
@@ -250,6 +283,50 @@ QStatusBar {
     color: white;
 }
 
+QDateEdit {
+    background-color: #ffffff;
+    border: 2px solid #e1e8ed;
+    border-radius: 6px;
+    padding: 6px;
+    color: #000000;
+    font-size: 11px;
+}
+
+QDateEdit:focus {
+    border: 2px solid #3498db;
+}
+
+QDateEdit::drop-down {
+    border: none;
+    background-color: transparent;
+    width: 25px;
+    subcontrol-origin: padding;
+    subcontrol-position: right center;
+    image: url(none);
+}
+
+QDateEdit::down-arrow {
+    image: url(none);
+    width: 12px;
+    height: 12px;
+}
+
+QCalendarWidget {
+    background-color: #ffffff;
+    color: #000000;
+}
+
+QCalendarWidget QAbstractItemView {
+    background-color: #ffffff;
+    color: #000000;
+    selection-background-color: #3498db;
+    selection-color: #ffffff;
+}
+
+QCalendarWidget QWidget {
+    color: #000000;
+}
+
 QCalendarWidget QToolButton {
     background-color: #3498db;
     color: white;
@@ -269,7 +346,12 @@ QCalendarWidget QToolButton:pressed {
 
 QCalendarWidget QMenu {
     background-color: #ffffff;
-    color: #2c3e50;
+    color: #000000;
+}
+
+QCalendarWidget QSpinBox {
+    background-color: #ffffff;
+    color: #000000;
 }
 """
 
@@ -1062,6 +1144,225 @@ class MarksTableWidget(QWidget):
             if cell:
                 cell.setFocus()
 
+class StudentViewWidget(QWidget):
+    """Widget to view and manage students"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        layout = QVBoxLayout()
+        
+        # Top buttons
+        btn_layout = QHBoxLayout()
+        
+        download_sample_btn = QPushButton("📥 Download Sample Excel")
+        download_sample_btn.clicked.connect(self.download_sample_excel)
+        btn_layout.addWidget(download_sample_btn)
+        
+        upload_excel_btn = QPushButton("📤 Upload Excel")
+        upload_excel_btn.clicked.connect(self.upload_excel)
+        btn_layout.addWidget(upload_excel_btn)
+        
+        delete_btn = QPushButton("🗑️ Delete Selected")
+        delete_btn.clicked.connect(self.delete_student)
+        btn_layout.addWidget(delete_btn)
+        
+        refresh_btn = QPushButton("🔄 Refresh")
+        refresh_btn.clicked.connect(self.load_students)
+        btn_layout.addWidget(refresh_btn)
+        
+        btn_layout.addStretch()
+        layout.addLayout(btn_layout)
+        
+        # Students table
+        self.students_table = QTableWidget()
+        self.students_table.setColumnCount(8)
+        self.students_table.setHorizontalHeaderLabels([
+            "G.R No", "Student Name", "Father Name", 
+            "Class/Sec", "Session", "Status", "Contact", "Address"
+        ])
+        self.students_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.students_table.setAlternatingRowColors(True)
+        self.students_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.students_table.setSelectionBehavior(QTableWidget.SelectRows)
+        layout.addWidget(self.students_table)
+        
+        self.setLayout(layout)
+        self.load_students()
+    
+    def load_students(self):
+        """Load students from database"""
+        import sqlite3
+        conn = sqlite3.connect("report_system.db")
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT gr_no, student_name, father_name, 
+                   current_class_sec, current_session, status, contact_number_resident, address
+            FROM students
+            ORDER BY gr_no
+        """)
+        
+        students = cursor.fetchall()
+        conn.close()
+        
+        self.students_table.setRowCount(len(students))
+        for row_idx, student in enumerate(students):
+            for col_idx, value in enumerate(student):
+                item = QTableWidgetItem(str(value) if value else "")
+                self.students_table.setItem(row_idx, col_idx, item)
+    
+    def delete_student(self):
+        """Delete selected student"""
+        selected_row = self.students_table.currentRow()
+        
+        if selected_row < 0:
+            QMessageBox.warning(self, "Error", "Please select a student to delete!")
+            return
+        
+        # Get GR No from first column (index 0)
+        gr_no = self.students_table.item(selected_row, 0).text()
+        student_name = self.students_table.item(selected_row, 1).text()
+        
+        # Confirm deletion
+        reply = QMessageBox.question(
+            self, "Confirm Deletion",
+            f"Are you sure you want to delete this student?\n\nG.R No: {gr_no}\nName: {student_name}",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            try:
+                import sqlite3
+                conn = sqlite3.connect("report_system.db")
+                cursor = conn.cursor()
+                
+                cursor.execute("DELETE FROM students WHERE gr_no = ?", (gr_no,))
+                conn.commit()
+                conn.close()
+                
+                QMessageBox.information(self, "Success", f"Student {student_name} deleted successfully!")
+                self.load_students()
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to delete student:\n{str(e)}")
+    
+    def download_sample_excel(self):
+        """Download sample Excel file"""
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Sample Excel", "student_sample.xlsx", 
+            "Excel Files (*.xlsx)"
+        )
+        
+        if file_path:
+            # Create sample DataFrame with exact database columns
+            sample_data = {
+                'current_class_sec': ['I-A', 'II-B', 'III-C'],
+                'gr_no': ['001', '002', '003'],
+                'student_name': ['Student Name 1', 'Student Name 2', 'Student Name 3'],
+                'address': ['Address 1', 'Address 2', 'Address 3'],
+                'contact_number_resident': ['0300-1234567', '0321-9876543', '0333-1112222'],
+                'contact_number_neighbour': ['', '', ''],
+                'contact_number_relative': ['', '', ''],
+                'contact_number_other1': ['', '', ''],
+                'contact_number_other2': ['', '', ''],
+                'contact_number_other3': ['', '', ''],
+                'contact_number_other4': ['', '', ''],
+                'date_of_birth': ['2010-01-15', '2011-05-20', '2009-12-10'],
+                'joining_date': ['2024-01-01', '2024-01-01', '2024-01-01']
+            }
+            
+            df = pd.DataFrame(sample_data)
+            df.to_excel(file_path, index=False)
+            QMessageBox.information(self, "Success", "Sample Excel file downloaded successfully!")
+    
+    def upload_excel(self):
+        """Upload Excel file and import students"""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select Excel File", "", "Excel Files (*.xlsx *.xls)"
+        )
+        
+        if not file_path:
+            return
+        
+        try:
+            # Read Excel file
+            df = pd.read_excel(file_path)
+            
+            # Validate required columns - exact schema fields
+            required_cols = ['current_class_sec', 'gr_no', 'student_name', 'address', 
+                           'contact_number_resident', 'contact_number_neighbour', 'contact_number_relative',
+                           'contact_number_other1', 'contact_number_other2', 'contact_number_other3',
+                           'contact_number_other4', 'date_of_birth', 'joining_date']
+            missing_cols = [col for col in required_cols if col not in df.columns]
+            
+            if missing_cols:
+                QMessageBox.warning(
+                    self, "Error", 
+                    f"Missing required columns: {', '.join(missing_cols)}\n\n"
+                    f"Required columns: {', '.join(required_cols)}"
+                )
+                return
+            
+            # Import to database
+            import sqlite3
+            conn = sqlite3.connect("report_system.db")
+            cursor = conn.cursor()
+            
+            success_count = 0
+            error_count = 0
+            errors = []
+            
+            for idx, row in df.iterrows():
+                try:
+                    cursor.execute("""
+                        INSERT INTO students (
+                            gr_no, student_name, current_class_sec, address,
+                            contact_number_resident, contact_number_neighbour, contact_number_relative,
+                            contact_number_other1, contact_number_other2, contact_number_other3, 
+                            contact_number_other4, date_of_birth, joining_date
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        str(row['gr_no']),
+                        str(row['student_name']),
+                        str(row['current_class_sec']),
+                        str(row['address']),
+                        str(row['contact_number_resident']),
+                        str(row['contact_number_neighbour']),
+                        str(row['contact_number_relative']),
+                        str(row['contact_number_other1']),
+                        str(row['contact_number_other2']),
+                        str(row['contact_number_other3']),
+                        str(row['contact_number_other4']),
+                        str(row['date_of_birth']) if pd.notna(row['date_of_birth']) else None,
+                        str(row['joining_date']) if pd.notna(row['joining_date']) else None
+                    ))
+                    success_count += 1
+                except sqlite3.IntegrityError as e:
+                    error_count += 1
+                    errors.append(f"Row {idx + 2}: G.R No {row['gr_no']} already exists")
+                except Exception as e:
+                    error_count += 1
+                    errors.append(f"Row {idx + 2}: {str(e)}")
+            
+            conn.commit()
+            conn.close()
+            
+            # Show result
+            msg = f"Import completed!\n\nSuccessfully added: {success_count} students"
+            if error_count > 0:
+                msg += f"\nFailed: {error_count} students\n\n"
+                msg += "Errors:\n" + "\n".join(errors[:10])
+                if len(errors) > 10:
+                    msg += f"\n... and {len(errors) - 10} more errors"
+            
+            QMessageBox.information(self, "Import Result", msg)
+            self.load_students()
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to import Excel file:\n{str(e)}")
+
 class NavigableMainWindow(QtWidgets.QMainWindow):
     """Main window with arrow key navigation"""
     def __init__(self):
@@ -1106,9 +1407,6 @@ class MainWindow(NavigableMainWindow):
         super().__init__()
         self.setWindowTitle("📋 Faizan Academy - Report Card System")
 
-        # Open as fullscreen
-        self.showMaximized()
-
         # Set icon and stylesheet
         self.setStyleSheet(MODERN_STYLESHEET)
 
@@ -1121,7 +1419,9 @@ class MainWindow(NavigableMainWindow):
         self.create_form()
         self.load_initial_subjects()
         # self.setup_complete_tab_order() # Removed - handled by register_widgets
-        self.show()
+        
+        # Open maximized (windowed fullscreen with minimize/close buttons)
+        self.showMaximized()
 
     def reset_form(self):
         """Clear all form fields"""
@@ -1159,9 +1459,8 @@ class MainWindow(NavigableMainWindow):
 
     def create_menu(self):
         menubar = self.menuBar()
-        settings_menu = menubar.addMenu("Settings")
-
-        settings_action = settings_menu.addAction("Application Settings")
+        
+        settings_action = menubar.addAction("Settings")
         settings_action.triggered.connect(self.open_settings)
 
     def open_settings(self):
@@ -1348,6 +1647,13 @@ class MainWindow(NavigableMainWindow):
         self.date_input.setDate(QDate.currentDate())
         self.date_input.setCalendarPopup(True)
         self.date_input.setDisplayFormat("dd MMMM yyyy")
+        
+        # Create calendar widget and ensure it appears on top
+        from PySide6.QtWidgets import QCalendarWidget
+        calendar = QCalendarWidget()
+        calendar.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
+        self.date_input.setCalendarWidget(calendar)
+        
         h.addWidget(self.date_input)
         h.addStretch()
         layout.addLayout(h)
@@ -1405,7 +1711,13 @@ class MainWindow(NavigableMainWindow):
                 background: none;
             }
         """)
-        self.setCentralWidget(scroll)
+        
+        # Create tab widget
+        self.tab_widget = QTabWidget()
+        self.tab_widget.addTab(scroll, "Result")
+        self.tab_widget.addTab(StudentViewWidget(self), "Student View")
+        
+        self.setCentralWidget(self.tab_widget)
 
         # Register all widgets in exact navigation order
         widgets_order = [
