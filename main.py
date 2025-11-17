@@ -2080,6 +2080,16 @@ class MainWindow(NavigableMainWindow):
         h.addStretch()
         layout.addLayout(h)
 
+        # --- G.R No with Live Validation (Numeric Only) - MOVED TO FIRST ---
+        h = QHBoxLayout()
+        h.addWidget(QLabel("G.R No.:"))
+        self.gr_no_input = QLineEdit()
+        self.gr_no_input.setPlaceholderText("Enter GR No to auto-fill student details")
+        self.gr_no_input.textChanged.connect(self.validate_gr_no_live)
+        self.gr_no_input.editingFinished.connect(self.autofill_student_details)
+        h.addWidget(self.gr_no_input)
+        layout.addLayout(h)
+
         # --- Student's Name ---
         h = QHBoxLayout()
         h.addWidget(QLabel("Student's Name:"))
@@ -2107,15 +2117,6 @@ class MainWindow(NavigableMainWindow):
         self.class_sec_error = QLabel("")
         self.class_sec_error.setStyleSheet("color: #e74c3c; font-size: 9px;")
         layout.addWidget(self.class_sec_error)
-
-        # --- G.R No with Live Validation (Numeric Only) ---
-        h = QHBoxLayout()
-        h.addWidget(QLabel("G.R No.:"))
-        self.gr_no_input = QLineEdit()
-        self.gr_no_input.setPlaceholderText("Numeric only")
-        self.gr_no_input.textChanged.connect(self.validate_gr_no_live)
-        h.addWidget(self.gr_no_input)
-        layout.addLayout(h)
 
         # --- Rank in Class ---
         h = QHBoxLayout()
@@ -2334,38 +2335,19 @@ class MainWindow(NavigableMainWindow):
         # Rest will be added in populate_marks_table()
 
     def validate_class_sec_live(self):
-        """Live validation for class/section format"""
-        text = self.class_sec_input.text().strip()
-        pattern = r'^(I|II|III|IV|V|VI|VII|VIII|IX|X|\d+)-[A-Z]$'
-
-        if not text:
-            self.class_sec_error.setText("")
-            return True
-
-        if re.match(pattern, text):
-            self.class_sec_error.setText("")
-            self.class_sec_input.setStyleSheet("""
-                QLineEdit {
-                    background-color: #ffffff;
-                    border: 2px solid #27ae60;
-                    border-radius: 6px;
-                    padding: 8px;
-                    color: #2c3e50;
-                }
-            """)
-            return True
-        else:
-            self.class_sec_error.setText("❌ Format: I-A, II-B, III-C, etc.")
-            self.class_sec_input.setStyleSheet("""
-                QLineEdit {
-                    background-color: #fff5f5;
-                    border: 2px solid #e74c3c;
-                    border-radius: 6px;
-                    padding: 8px;
-                    color: #2c3e50;
-                }
-            """)
-            return False
+        """Live validation for class/section format - DISABLED"""
+        # Validation removed - accept any format
+        self.class_sec_error.setText("")
+        self.class_sec_input.setStyleSheet("""
+            QLineEdit {
+                background-color: #ffffff;
+                border: 2px solid #e1e8ed;
+                border-radius: 6px;
+                padding: 8px;
+                color: #2c3e50;
+            }
+        """)
+        return True
 
     def validate_gr_no_live(self):
         """Live validation for G.R number - numeric only"""
@@ -2378,6 +2360,45 @@ class MainWindow(NavigableMainWindow):
             self.gr_no_input.blockSignals(True)
             self.gr_no_input.setText(numeric_text)
             self.gr_no_input.blockSignals(False)
+
+    def autofill_student_details(self):
+        """Auto-fill student name, father name, and class-sec when GR No is entered"""
+        gr_no = self.gr_no_input.text().strip()
+        
+        if not gr_no:
+            # Clear all fields if GR No is removed
+            self.student_name_input.clear()
+            self.father_name_input.clear()
+            self.class_sec_input.clear()
+            return
+        
+        try:
+            import sqlite3
+            conn = sqlite3.connect("report_system.db")
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT student_name, father_name, current_class_sec 
+                FROM students 
+                WHERE gr_no = ?
+            """, (gr_no,))
+            
+            result = cursor.fetchone()
+            conn.close()
+            
+            if result:
+                student_name, father_name, class_sec = result
+                self.student_name_input.setText(student_name or "")
+                self.father_name_input.setText(father_name or "")
+                self.class_sec_input.setText(class_sec or "")
+            else:
+                # Clear fields if no student found
+                self.student_name_input.clear()
+                self.father_name_input.clear()
+                self.class_sec_input.clear()
+                
+        except Exception as e:
+            print(f"Error fetching student details: {e}")
 
     def calculate_days_absent(self):
         """Auto-calculate days absent as total - attended"""
@@ -3021,12 +3042,9 @@ class MainWindow(NavigableMainWindow):
             QMessageBox.critical(self, "Error", f"Error: {str(e)}")
 
     def validate_class_sec(self, class_sec):
-            """Validate class/section format (e.g., I-A, II-B, III-C)"""
-            if not class_sec:
-                return False
-            # Pattern: Roman numeral or number, dash, and a letter
-            pattern = r'^(I|II|III|IV|V|VI|VII|VIII|IX|X|\d+)-[A-Z]$'
-            return bool(re.match(pattern, class_sec))
+            """Validate class/section format - DISABLED"""
+            # Validation removed - accept any format
+            return True if class_sec else False
 
     def validate_gr_no(self, gr_no):
         """Validate G.R number (must be numeric)"""

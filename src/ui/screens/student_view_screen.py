@@ -296,20 +296,64 @@ class StudentViewScreen(QWidget):
         self.inactive_students_label.setText(f"Inactive: {inactive}")
     
     def load_class_filter(self):
-        """Load unique classes for filter dropdown"""
+        """Load unique classes for filter dropdown with custom order"""
         import sqlite3
         conn = sqlite3.connect("report_system.db")
         cursor = conn.cursor()
         
-        cursor.execute("SELECT DISTINCT current_class_sec FROM students WHERE current_class_sec IS NOT NULL ORDER BY current_class_sec")
+        cursor.execute("SELECT DISTINCT current_class_sec FROM students WHERE current_class_sec IS NOT NULL")
         classes = cursor.fetchall()
         conn.close()
         
+        # Define custom order (normalized without hyphens)
+        custom_order = [
+            'NURA', 'NURB',
+            'KGA', 'KGB',
+            'KGIA', 'KGIB',
+            'KGIIA', 'KGIIB',
+            'IA', 'IB', 'IC',
+            'IIA', 'IIB', 'IIC',
+            'IIIAN', 'IIIBN',
+            'IVAN', 'IVBN',
+            'VAN', 'VBN',
+            'IIIA', 'IIIB',
+            'IVA', 'IVB',
+            'VA', 'VB',
+            'VIA', 'VIB',
+            'VIIA', 'VIIB',
+            'VIIIA', 'VIIIB',
+            'IXA', 'IXB',
+            'XA', 'XB',
+            'FDHIIIA', 'FDHIIIB',
+            'FDHIVA', 'FDHIVB',
+            'FDHVA', 'FDHVB'
+        ]
+        
+        # Sort classes based on custom order
+        sorted_classes = []
+        class_list = [cls[0] for cls in classes if cls[0]]
+        
+        # Normalize function to remove spaces and hyphens
+        def normalize(class_name):
+            return class_name.upper().replace(' ', '').replace('-', '')
+        
+        # First add classes in custom order
+        for order_class in custom_order:
+            for db_class in class_list:
+                if normalize(db_class) == order_class:
+                    if db_class not in sorted_classes:
+                        sorted_classes.append(db_class)
+                        break
+        
+        # Then add any remaining classes not in custom order
+        for db_class in class_list:
+            if db_class not in sorted_classes:
+                sorted_classes.append(db_class)
+        
         self.class_filter.clear()
         self.class_filter.addItem("All Classes")
-        for cls in classes:
-            if cls[0]:
-                self.class_filter.addItem(cls[0])
+        for cls in sorted_classes:
+            self.class_filter.addItem(cls)
     
     def filter_students(self):
         """Filter students based on search and filter criteria"""
