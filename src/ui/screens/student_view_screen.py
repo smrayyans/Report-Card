@@ -897,11 +897,12 @@ class StudentViewScreen(QWidget):
         )
         
         if file_path:
-            # Create sample DataFrame with exact database columns
+            # Create sample DataFrame with exact database columns including father_name
             sample_data = {
                 'current_class_sec': ['I-A', 'II-B', 'III-C'],
                 'gr_no': ['001', '002', '003'],
                 'student_name': ['Student Name 1', 'Student Name 2', 'Student Name 3'],
+                'father_name': ['Father Name 1', 'Father Name 2', 'Father Name 3'],
                 'address': ['Address 1', 'Address 2', 'Address 3'],
                 'contact_number_resident': ['0300-1234567', '0321-9876543', '0333-1112222'],
                 'contact_number_neighbour': ['', '', ''],
@@ -932,7 +933,7 @@ class StudentViewScreen(QWidget):
             df = pd.read_excel(file_path)
             
             # Validate required columns - exact schema fields
-            required_cols = ['current_class_sec', 'gr_no', 'student_name', 'address', 
+            required_cols = ['current_class_sec', 'gr_no', 'student_name', 'father_name', 'address', 
                            'contact_number_resident', 'contact_number_neighbour', 'contact_number_relative',
                            'contact_number_other1', 'contact_number_other2', 'contact_number_other3',
                            'contact_number_other4', 'date_of_birth', 'joining_date']
@@ -951,39 +952,85 @@ class StudentViewScreen(QWidget):
             conn = sqlite3.connect("report_system.db")
             cursor = conn.cursor()
             
-            success_count = 0
+            added_count = 0
+            updated_count = 0
             error_count = 0
             errors = []
             
             for idx, row in df.iterrows():
                 try:
-                    cursor.execute("""
-                        INSERT INTO students (
-                            gr_no, student_name, current_class_sec, address,
-                            contact_number_resident, contact_number_neighbour, contact_number_relative,
-                            contact_number_other1, contact_number_other2, contact_number_other3, 
-                            contact_number_other4, date_of_birth, joining_date
-                        )
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (
-                        str(row['gr_no']),
-                        str(row['student_name']),
-                        str(row['current_class_sec']),
-                        str(row['address']),
-                        str(row['contact_number_resident']),
-                        str(row['contact_number_neighbour']),
-                        str(row['contact_number_relative']),
-                        str(row['contact_number_other1']),
-                        str(row['contact_number_other2']),
-                        str(row['contact_number_other3']),
-                        str(row['contact_number_other4']),
-                        str(row['date_of_birth']) if pd.notna(row['date_of_birth']) else None,
-                        str(row['joining_date']) if pd.notna(row['joining_date']) else None
-                    ))
-                    success_count += 1
-                except sqlite3.IntegrityError as e:
-                    error_count += 1
-                    errors.append(f"Row {idx + 2}: G.R No {row['gr_no']} already exists")
+                    gr_no = str(row['gr_no']).strip()
+                    
+                    # Check if student already exists
+                    cursor.execute("SELECT student_id, father_name, contact_number_resident, contact_number_neighbour, contact_number_relative, contact_number_other1, contact_number_other2, contact_number_other3, contact_number_other4 FROM students WHERE gr_no = ?", (gr_no,))
+                    existing = cursor.fetchone()
+                    
+                    if existing:
+                        # Student exists - check for updates
+                        student_id, db_father_name, db_res, db_neigh, db_rel, db_oth1, db_oth2, db_oth3, db_oth4 = existing
+                        
+                        # Prepare update fields
+                        updates = []
+                        update_values = []
+                        
+                        # Check father_name
+                        new_father = str(row['father_name']).strip() if pd.notna(row['father_name']) and str(row['father_name']).strip() else ""
+                        if new_father and (not db_father_name or db_father_name.strip() == ""):
+                            updates.append("father_name = ?")
+                            update_values.append(new_father)
+                        
+                        # Check contact numbers - add if not empty and different
+                        contact_fields = [
+                            ('contact_number_resident', db_res),
+                            ('contact_number_neighbour', db_neigh),
+                            ('contact_number_relative', db_rel),
+                            ('contact_number_other1', db_oth1),
+                            ('contact_number_other2', db_oth2),
+                            ('contact_number_other3', db_oth3),
+                            ('contact_number_other4', db_oth4)
+                        ]
+                        
+                        for col_name, db_value in contact_fields:
+                            new_value = str(row[col_name]).strip() if pd.notna(row[col_name]) and str(row[col_name]).strip() not in ['', 'nan', 'None'] else ""
+                            if new_value and (not db_value or db_value.strip() == ""):
+                                updates.append(f"{col_name} = ?")
+                                update_values.append(new_value)
+                        
+                        # Perform update if there are changes
+                        if updates:
+                            updates.append("updated_at = CURRENT_TIMESTAMP")
+                            update_values.append(gr_no)
+                            cursor.execute(f"UPDATE students SET {', '.join(updates)} WHERE gr_no = ?", update_values)
+                            updated_count += 1
+                        
+                    else:
+                        # New student - insert
+                        cursor.execute("""
+                            INSERT INTO students (
+                                gr_no, student_name, father_name, current_class_sec, address,
+                                contact_number_resident, contact_number_neighbour, contact_number_relative,
+                                contact_number_other1, contact_number_other2, contact_number_other3, 
+                                contact_number_other4, date_of_birth, joining_date
+                            )
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """, (
+                            gr_no,
+                            str(row['student_name']).strip(),
+                            str(row['father_name']).strip() if pd.notna(row['father_name']) else "",
+                            str(row['current_class_sec']).strip(),
+                            str(row['address']).strip(),
+                            str(row['contact_number_resident']).strip() if pd.notna(row['contact_number_resident']) else "",
+                            str(row['contact_number_neighbour']).strip() if pd.notna(row['contact_number_neighbour']) else "",
+                            str(row['contact_number_relative']).strip() if pd.notna(row['contact_number_relative']) else "",
+                            str(row['contact_number_other1']).strip() if pd.notna(row['contact_number_other1']) else "",
+                            str(row['contact_number_other2']).strip() if pd.notna(row['contact_number_other2']) else "",
+                            str(row['contact_number_other3']).strip() if pd.notna(row['contact_number_other3']) else "",
+                            str(row['contact_number_other4']).strip() if pd.notna(row['contact_number_other4']) else "",
+                            str(row['date_of_birth']) if pd.notna(row['date_of_birth']) else None,
+                            str(row['joining_date']) if pd.notna(row['joining_date']) else None
+                        ))
+                        added_count += 1
+                        
                 except Exception as e:
                     error_count += 1
                     errors.append(f"Row {idx + 2}: {str(e)}")
@@ -992,7 +1039,11 @@ class StudentViewScreen(QWidget):
             conn.close()
             
             # Show result
-            msg = f"Import completed!\n\nSuccessfully added: {success_count} students"
+            msg = f"Import completed!\n\n"
+            if added_count > 0:
+                msg += f"Successfully added: {added_count} students\n"
+            if updated_count > 0:
+                msg += f"Successfully updated: {updated_count} students\n"
             if error_count > 0:
                 msg += f"\nFailed: {error_count} students\n\n"
                 msg += "Errors:\n" + "\n".join(errors[:10])
