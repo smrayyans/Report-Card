@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
+import { useEffect } from 'react';
 
 const drawerVariants = {
   hidden: { x: '100%', opacity: 0 },
@@ -13,6 +14,21 @@ const backdropVariants = {
 };
 
 export default function StudentDetailDrawer({ open, detail, loading, onClose, onDetailedView }) {
+  useEffect(() => {
+    if (open) {
+      // Prevent body scrolling when drawer is open
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Restore body scrolling when drawer is closed
+      document.body.style.overflow = '';
+    }
+
+    // Cleanup function to restore scrolling if component unmounts
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [open]);
+
   return (
     <AnimatePresence>
       {open && (

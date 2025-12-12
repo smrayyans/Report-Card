@@ -15,7 +15,15 @@ const backdropVariants = {
 
 const statusOptions = ['Active', 'Left', 'Inactive'];
 
-export default function StudentEditModal({ open, student, onClose, onSave, loading }) {
+export default function StudentEditModal({
+    open,
+    student,
+    onClose,
+    onSave,
+    loading,
+    onDelete,
+    deleteLoading,
+}) {
     const [formData, setFormData] = useState({
         student_name: '',
         father_name: '',
@@ -62,6 +70,21 @@ export default function StudentEditModal({ open, student, onClose, onSave, loadi
             setErrors({});
         }
     }, [student]);
+
+    useEffect(() => {
+        if (open) {
+            // Prevent body scrolling when modal is open
+            document.body.style.overflow = 'hidden';
+        } else {
+            // Restore body scrolling when modal is closed
+            document.body.style.overflow = '';
+        }
+
+        // Cleanup function to restore scrolling if component unmounts
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [open]);
 
     const handleChange = (field, value) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
@@ -116,7 +139,7 @@ export default function StudentEditModal({ open, student, onClose, onSave, loadi
     return (
         <AnimatePresence>
             {open && (
-                <>
+                <div style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', overflow: 'hidden', zIndex: 20 }}>
                     <motion.div
                         className="modal-backdrop"
                         variants={backdropVariants}
@@ -404,17 +427,34 @@ export default function StudentEditModal({ open, student, onClose, onSave, loadi
                             </section>
 
                             {/* Actions */}
-                            <div className="modal-actions">
-                                <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>
-                                    Cancel
-                                </button>
-                                <button type="submit" className="btn btn-primary" disabled={loading}>
+                            <div className="modal-actions modal-actions--split">
+                                <div className="modal-actions__support">
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        onClick={onClose}
+                                        disabled={loading || deleteLoading}
+                                    >
+                                        Cancel
+                                    </button>
+                                    {onDelete && (
+                                        <button
+                                            type="button"
+                                            className="btn btn-danger"
+                                            onClick={onDelete}
+                                            disabled={loading || deleteLoading}
+                                        >
+                                            {deleteLoading ? 'Deleting...' : 'Delete Student'}
+                                        </button>
+                                    )}
+                                </div>
+                                <button type="submit" className="btn btn-primary" disabled={loading || deleteLoading}>
                                     {loading ? 'Saving...' : 'Save Changes'}
                                 </button>
                             </div>
                         </form>
                     </motion.div>
-                </>
+                </div>
             )}
         </AnimatePresence>
     );

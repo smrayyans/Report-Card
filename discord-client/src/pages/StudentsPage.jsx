@@ -32,8 +32,14 @@ export default function StudentsPage() {
   const importLoading = useStudentStore((state) => state.importLoading);
   const clearDetail = useStudentStore((state) => state.clearDetail);
   const updateStudent = useStudentStore((state) => state.updateStudent);
+  const deleteStudent = useStudentStore((state) => state.deleteStudent);
+  const loadMoreStudents = useStudentStore((state) => state.loadMoreStudents);
+  const hasMore = useStudentStore((state) => state.hasMore);
+  const loadingMore = useStudentStore((state) => state.loadingMore);
+  const totalStudents = useStudentStore((state) => state.totalStudents);
 
   const [saveLoading, setSaveLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -111,7 +117,6 @@ export default function StudentsPage() {
 
   const openDetailModal = () => {
     setDetailModalOpen(true);
-    setDrawerOpen(false);
   };
 
   const closeDrawer = () => {
@@ -142,6 +147,50 @@ export default function StudentsPage() {
       });
     } finally {
       setSaveLoading(false);
+    }
+  };
+
+  const handleDeleteStudent = async () => {
+    if (!detail?.gr_no) return;
+    const confirmDelete = window.confirm(
+      `Are you sure you want to permanently delete ${detail.student_name}? This cannot be undone.`,
+    );
+    if (!confirmDelete) return;
+
+    setDeleteLoading(true);
+    try {
+      await deleteStudent(detail.gr_no);
+      toast({
+        type: 'success',
+        title: 'Student deleted',
+        message: `${detail.student_name} has been removed from the roster.`,
+      });
+      setDetailModalOpen(false);
+      setDrawerOpen(false);
+      setSelected(null);
+      clearDetail();
+      await fetchStudents(filters);
+      await fetchStats();
+    } catch (error) {
+      toast({
+        type: 'error',
+        title: 'Delete failed',
+        message: error.response?.data?.detail || 'Could not delete the student.',
+      });
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleLoadMore = async () => {
+    try {
+      await loadMoreStudents(filters);
+    } catch (error) {
+      toast({
+        type: 'error',
+        title: 'Failed to load more',
+        message: 'Could not fetch additional students.',
+      });
     }
   };
 
@@ -243,6 +292,18 @@ export default function StudentsPage() {
           </button>
         </div>
         <StudentTable students={students} loading={loading} onSelect={handleSelect} selected={selected} />
+
+        {hasMore && (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0' }}>
+            <button
+              className="btn btn-secondary"
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+            >
+              {loadingMore ? 'Loading...' : `Show More (${students.length} of ${totalStudents})`}
+            </button>
+          </div>
+        )}
       </section >
 
       <StudentDetailDrawer
@@ -258,6 +319,8 @@ export default function StudentsPage() {
         student={detail}
         onClose={() => setDetailModalOpen(false)}
         onSave={handleSaveStudent}
+        onDelete={handleDeleteStudent}
+        deleteLoading={deleteLoading}
         loading={saveLoading}
       />
     </div >

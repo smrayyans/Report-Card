@@ -6,13 +6,15 @@ Provides authentication, student management, configuration, and PDF generation.
 from __future__ import annotations
 
 import json
-import sqlite3
+import os
 import sys
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 import pandas as pd
+import psycopg2
+from psycopg2 import extras
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -26,19 +28,26 @@ from backend.core.config_manager import ConfigManager
 from backend.core.pdf_manager import PDFManager
 from backend.core.helpers import calculate_age, calculate_years_studying, format_date
 
-DB_PATH = BASE_DIR / "discord-client" / "assets" / "report_system.db"
 SAMPLE_EXCEL = BASE_DIR / "student_sample.xlsx"
 FILTERS_FILE = BASE_DIR / "settings" / "filters.json"
 REMARKS_FILE = BASE_DIR / "settings" / "remarks.json"
 
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_NAME = os.getenv("DB_NAME", "report_system")
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "rayyanshah04")
 
-def get_connection() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+
+def get_connection():
+    return psycopg2.connect(
+        host=DB_HOST,
+        dbname=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD,
+    )
 
 
-def row_to_dict(row: sqlite3.Row) -> Dict[str, Any]:
+def row_to_dict(row: Dict[str, Any]) -> Dict[str, Any]:
     return {key: row[key] for key in row.keys()}
 
 
@@ -119,9 +128,12 @@ def health_check():
 @app.post("/auth/login")
 def login(payload: LoginRequest):
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
     cursor.execute(
-        "SELECT user_id, role FROM users WHERE username = ? AND password = ? AND is_active = 1",
+        """
+        SELECT user_id, role FROM users 
+        WHERE username = %s AND password = %s AND is_active = TRUE
+        """,
         (payload.username, payload.password),
     )
     user = cursor.fetchone()
@@ -138,9 +150,11 @@ def list_students(
     search: Optional[str] = None,
     class_sec: Optional[str] = None,
     status: Optional[str] = None,
+    limit: int = 15,
+    offset: int = 0,
 ):
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
 
     query = """
         SELECT gr_no, student_name, father_name, 
@@ -148,37 +162,53 @@ def list_students(
                contact_number_resident as contact, address
         FROM students
     """
+    count_query = "SELECT COUNT(*) as total FROM students"
+    
     clauses = []
     params: list[Any] = []
 
     if search:
         like = f"%{search}%"
         clauses.append(
-            "(student_name LIKE ? OR father_name LIKE ? OR gr_no LIKE ? OR current_class_sec LIKE ?)"
+            "(student_name ILIKE %s OR father_name ILIKE %s OR gr_no ILIKE %s OR current_class_sec ILIKE %s)"
         )
         params.extend([like, like, like, like])
     if class_sec and class_sec.lower() != "all":
-        clauses.append("current_class_sec = ?")
+        clauses.append("current_class_sec = %s")
         params.append(class_sec)
     if status and status.lower() != "all":
-        clauses.append("status = ?")
+        clauses.append("status = %s")
         params.append(status)
 
     if clauses:
-        query += " WHERE " + " AND ".join(clauses)
+        where_clause = " WHERE " + " AND ".join(clauses)
+        query += where_clause
+        count_query += where_clause
 
-    query += " ORDER BY student_name COLLATE NOCASE"
+    # Get total count
+    cursor.execute(count_query, params)
+    total = cursor.fetchone()["total"]
+
+    # Add ordering and pagination
+    query += " ORDER BY LOWER(student_name)"
+    query += f" LIMIT {limit} OFFSET {offset}"
 
     cursor.execute(query, params)
     rows = cursor.fetchall()
     conn.close()
-    return [row_to_dict(row) for row in rows]
+    
+    return {
+        "students": [row_to_dict(row) for row in rows],
+        "total": total,
+        "limit": limit,
+        "offset": offset
+    }
 
 
 @app.get("/students/classes")
 def list_classes():
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
     cursor.execute("SELECT DISTINCT current_class_sec FROM students WHERE current_class_sec IS NOT NULL")
     rows = [row["current_class_sec"] for row in cursor.fetchall() if row["current_class_sec"]]
     conn.close()
@@ -249,7 +279,7 @@ def list_classes():
 @app.get("/students/stats")
 def student_stats():
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
     cursor.execute("SELECT COUNT(*) AS total FROM students")
     total = cursor.fetchone()["total"]
     cursor.execute("SELECT COUNT(*) AS active FROM students WHERE status = 'Active'")
@@ -263,7 +293,7 @@ def student_stats():
 @app.get("/students/{gr_no}")
 def student_detail(gr_no: str):
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
     cursor.execute(
         """
         SELECT student_id, gr_no, student_name, father_name, current_class_sec, current_session, 
@@ -271,7 +301,7 @@ def student_detail(gr_no: str):
                contact_number_resident, contact_number_neighbour, contact_number_relative,
                contact_number_other1, contact_number_other2, contact_number_other3,
                contact_number_other4, address, created_at, updated_at
-        FROM students WHERE gr_no = ?
+        FROM students WHERE gr_no = %s
         """,
         (gr_no,),
     )
@@ -307,10 +337,10 @@ def student_detail(gr_no: str):
 @app.put("/students/{gr_no}")
 def update_student(gr_no: str, payload: StudentUpdateRequest):
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
     
     # Check if student exists
-    cursor.execute("SELECT student_id FROM students WHERE gr_no = ?", (gr_no,))
+    cursor.execute("SELECT student_id FROM students WHERE gr_no = %s", (gr_no,))
     if not cursor.fetchone():
         conn.close()
         raise HTTPException(status_code=404, detail=f"Student with G.R No '{gr_no}' not found")
@@ -320,7 +350,7 @@ def update_student(gr_no: str, payload: StudentUpdateRequest):
     params = []
     
     for field, value in payload.dict(exclude_unset=True).items():
-        update_fields.append(f"{field} = ?")
+        update_fields.append(f"{field} = %s")
         params.append(value)
     
     if not update_fields:
@@ -331,7 +361,7 @@ def update_student(gr_no: str, payload: StudentUpdateRequest):
     update_fields.append("updated_at = CURRENT_TIMESTAMP")
     params.append(gr_no)
     
-    query = f"UPDATE students SET {', '.join(update_fields)} WHERE gr_no = ?"
+    query = f"UPDATE students SET {', '.join(update_fields)} WHERE gr_no = %s"
     
     try:
         cursor.execute(query, params)
@@ -342,10 +372,10 @@ def update_student(gr_no: str, payload: StudentUpdateRequest):
             """
             SELECT student_id, gr_no, student_name, father_name, current_class_sec, current_session, 
                    status, joining_date, left_date, left_reason, date_of_birth, 
-                   contact_number_resident, contact_number_neighbour, contact_number_relative,
-                   contact_number_other1, contact_number_other2, contact_number_other3,
-                   contact_number_other4, address, created_at, updated_at
-            FROM students WHERE gr_no = ?
+            contact_number_resident, contact_number_neighbour, contact_number_relative,
+            contact_number_other1, contact_number_other2, contact_number_other3,
+            contact_number_other4, address, created_at, updated_at
+            FROM students WHERE gr_no = %s
             """,
             (gr_no,),
         )
@@ -380,6 +410,26 @@ def update_student(gr_no: str, payload: StudentUpdateRequest):
         raise HTTPException(status_code=500, detail=f"Failed to update student: {exc}")
 
 
+@app.delete("/students/{gr_no}")
+def delete_student(gr_no: str):
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
+    cursor.execute("SELECT student_id FROM students WHERE gr_no = %s", (gr_no,))
+    if not cursor.fetchone():
+        conn.close()
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    try:
+        cursor.execute("DELETE FROM students WHERE gr_no = %s", (gr_no,))
+        conn.commit()
+        return {"status": "ok", "message": f"Student '{gr_no}' deleted successfully"}
+    except Exception as exc:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Unable to delete student: {exc}")
+    finally:
+        conn.close()
+
+
 @app.post("/students/import")
 async def import_students(file: UploadFile = File(...)):
     if not file.filename.endswith((".xlsx", ".xls")):
@@ -411,7 +461,7 @@ async def import_students(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail=f"Missing column: {column}")
 
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
     success = 0
     errors: list[str] = []
 
@@ -425,7 +475,7 @@ async def import_students(file: UploadFile = File(...)):
                     contact_number_other1, contact_number_other2, contact_number_other3, 
                     contact_number_other4, date_of_birth, joining_date
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 tuple(
                     str(row.get(column)) if pd.notna(row.get(column)) else None
@@ -433,7 +483,7 @@ async def import_students(file: UploadFile = File(...)):
                 ),
             )
             success += 1
-        except sqlite3.IntegrityError:
+        except psycopg2.IntegrityError:
             errors.append(f"Row {idx + 2}: G.R No {row.get('gr_no')} already exists")
         except Exception as exc:  # pragma: no cover - defensive
             errors.append(f"Row {idx + 2}: {exc}")
@@ -454,7 +504,7 @@ def sample_excel():
 @app.get("/subjects")
 def list_subjects():
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
     cursor.execute("SELECT subject_name, type FROM subjects ORDER BY subject_name")
     rows = cursor.fetchall()
     conn.close()
@@ -477,17 +527,17 @@ def create_subject(payload: SubjectCreateRequest):
         raise HTTPException(status_code=400, detail="Subject name cannot be empty")
     
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
     
     try:
         cursor.execute(
-            "INSERT INTO subjects (subject_name, type) VALUES (?, ?)",
+            "INSERT INTO subjects (subject_name, type) VALUES (%s, %s)",
             (payload.subject_name.strip(), payload.type)
         )
         conn.commit()
         conn.close()
         return {"status": "ok", "subject_name": payload.subject_name.strip(), "type": payload.type}
-    except sqlite3.IntegrityError:
+    except psycopg2.IntegrityError:
         conn.close()
         raise HTTPException(status_code=400, detail=f"Subject '{payload.subject_name}' already exists")
     except Exception as exc:
@@ -501,23 +551,23 @@ def update_subject(subject_name: str, payload: SubjectUpdateRequest):
         raise HTTPException(status_code=400, detail="Subject name cannot be empty")
     
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
     
     # Check if the subject exists
-    cursor.execute("SELECT subject_name FROM subjects WHERE subject_name = ?", (subject_name,))
+    cursor.execute("SELECT subject_name FROM subjects WHERE subject_name = %s", (subject_name,))
     if not cursor.fetchone():
         conn.close()
         raise HTTPException(status_code=404, detail=f"Subject '{subject_name}' not found")
     
     try:
         cursor.execute(
-            "UPDATE subjects SET subject_name = ?, type = ? WHERE subject_name = ?",
+            "UPDATE subjects SET subject_name = %s, type = %s WHERE subject_name = %s",
             (payload.new_name.strip(), payload.type, subject_name)
         )
         conn.commit()
         conn.close()
         return {"status": "ok", "subject_name": payload.new_name.strip(), "type": payload.type}
-    except sqlite3.IntegrityError:
+    except psycopg2.IntegrityError:
         conn.close()
         raise HTTPException(status_code=400, detail=f"Subject '{payload.new_name}' already exists")
     except Exception as exc:
@@ -528,16 +578,16 @@ def update_subject(subject_name: str, payload: SubjectUpdateRequest):
 @app.delete("/subjects/{subject_name}")
 def delete_subject(subject_name: str):
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
     
     # Check if the subject exists
-    cursor.execute("SELECT subject_name FROM subjects WHERE subject_name = ?", (subject_name,))
+    cursor.execute("SELECT subject_name FROM subjects WHERE subject_name = %s", (subject_name,))
     if not cursor.fetchone():
         conn.close()
         raise HTTPException(status_code=404, detail=f"Subject '{subject_name}' not found")
     
     try:
-        cursor.execute("DELETE FROM subjects WHERE subject_name = ?", (subject_name,))
+        cursor.execute("DELETE FROM subjects WHERE subject_name = %s", (subject_name,))
         conn.commit()
         conn.close()
         return {"status": "ok", "message": f"Subject '{subject_name}' deleted successfully"}

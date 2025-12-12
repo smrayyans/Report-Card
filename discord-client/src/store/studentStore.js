@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import api from '../services/api';
 
-const useStudentStore = create((set) => ({
+const useStudentStore = create((set, get) => ({
   students: [],
   stats: { total: 0, active: 0, inactive: 0 },
   classes: [],
@@ -9,18 +9,54 @@ const useStudentStore = create((set) => ({
   detail: null,
   detailLoading: false,
   importLoading: false,
+  totalStudents: 0,
+  currentOffset: 0,
+  hasMore: false,
+  loadingMore: false,
   fetchStudents: async (filters) => {
-    set({ loading: true });
+    set({ loading: true, currentOffset: 0 });
     try {
-      const params = {};
+      const params = { limit: 15, offset: 0 };
       if (filters?.search) params.search = filters.search;
-      if (filters?.classSec && filters.classSec !== 'All') params.class_sec = filters.classSec;
+      if (filters?.class_sec && filters.class_sec !== 'All') params.class_sec = filters.class_sec;
       if (filters?.status && filters.status !== 'All') params.status = filters.status;
       const response = await api.get('/students', { params });
-      set({ students: response.data, loading: false });
+      const { students, total, offset } = response.data;
+      set({
+        students,
+        totalStudents: total,
+        currentOffset: offset + students.length,
+        hasMore: offset + students.length < total,
+        loading: false
+      });
     } catch (error) {
       console.error(error);
       set({ loading: false });
+      throw error;
+    }
+  },
+  loadMoreStudents: async (filters) => {
+    const { currentOffset, loadingMore } = get();
+    if (loadingMore) return;
+
+    set({ loadingMore: true });
+    try {
+      const params = { limit: 15, offset: currentOffset };
+      if (filters?.search) params.search = filters.search;
+      if (filters?.class_sec && filters.class_sec !== 'All') params.class_sec = filters.class_sec;
+      if (filters?.status && filters.status !== 'All') params.status = filters.status;
+      const response = await api.get('/students', { params });
+      const { students: newStudents, total, offset } = response.data;
+      set((state) => ({
+        students: [...state.students, ...newStudents],
+        totalStudents: total,
+        currentOffset: offset + newStudents.length,
+        hasMore: offset + newStudents.length < total,
+        loadingMore: false
+      }));
+    } catch (error) {
+      console.error(error);
+      set({ loadingMore: false });
       throw error;
     }
   },
@@ -76,6 +112,15 @@ const useStudentStore = create((set) => ({
       // Update the detail if it's currently loaded
       set({ detail: response.data });
       return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+  deleteStudent: async (grNo) => {
+    if (!grNo) return;
+    try {
+      await api.delete(`/students/${grNo}`);
+      set({ detail: null });
     } catch (error) {
       throw error;
     }

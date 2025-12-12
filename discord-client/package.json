@@ -16,7 +16,6 @@
   },
   "dependencies": {
     "axios": "^1.13.2",
-    "better-sqlite3": "^12.5.0",
     "clsx": "^2.1.1",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
@@ -71,10 +70,6 @@
       {
         "from": "../student_sample.xlsx",
         "to": "assets/student_sample.xlsx"
-      },
-      {
-        "from": "assets/report_system.db",
-        "to": "assets/report_system.db"
       }
     ],
     "win": {
