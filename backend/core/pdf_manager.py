@@ -3,6 +3,8 @@ PDF Manager - Handles PDF generation from HTML templates
 """
 
 from pathlib import Path
+from typing import Any
+
 from jinja2 import Environment, FileSystemLoader
 
 
@@ -19,39 +21,50 @@ class PDFManager:
         PDFManager.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
-    def render_template(data):
+    def get_font_size(text: str) -> int:
+        """
+        Returns font size based on text length to prevent line wrapping
+        Scales down font size progressively for longer names
+        """
+        text_len = len(text)
+        if text_len <= 15:
+            return 20
+        if text_len <= 20:
+            return 18
+        if text_len <= 25:
+            return 16
+        if text_len <= 30:
+            return 14
+        return 12
+
+    @staticmethod
+    def annotate_font_sizes(payload: dict[str, Any]):
+        """Add font-size hints to each report payload for the template"""
+        def apply(record: dict[str, Any]):
+            record['student_name_font_size'] = PDFManager.get_font_size(record.get('student_name', ''))
+            record['father_name_font_size'] = PDFManager.get_font_size(record.get('father_name', ''))
+
+        records = payload.get('records')
+        if isinstance(records, list):
+            for record in records:
+                apply(record)
+        else:
+            apply(payload)
+
+    @staticmethod
+    def render_template(data: dict[str, Any], template_name: str = 'report_card.html'):
         """
         Render HTML template with student data using Jinja2
 
         Args:
-            data (dict): Dictionary containing all student/marks data
+            data (dict): Dictionary containing payload for the template
+            template_name (str): Template filename to render
 
         Returns:
             str: Rendered HTML content
         """
         try:
-            def get_font_size(text):
-                """
-                Returns font size based on text length to prevent line wrapping
-                Scales down font size progressively for longer names
-                """
-                text_len = len(text)
-                
-                # Short names: full size
-                if text_len <= 15:
-                    return 20
-                # Medium names: slightly reduced
-                elif text_len <= 20:
-                    return 18
-                # Long names: more reduced
-                elif text_len <= 25:
-                    return 16
-                # Very long names: significantly reduced
-                elif text_len <= 30:
-                    return 14
-                # Extremely long names: minimum readable size
-                else:
-                    return 12
+            PDFManager.annotate_font_sizes(data)
 
             css_path = PDFManager.TEMPLATES_DIR / 'styles.css'
             with open(css_path, 'r', encoding='utf-8') as handle:
@@ -63,28 +76,28 @@ class PDFManager:
             css_content = css_content.replace("url('calibri-italic.ttf')", f"url('file:///{templates_dir_str}/calibri-italic.ttf')")
 
             env = Environment(loader=FileSystemLoader(str(PDFManager.TEMPLATES_DIR)))
-            template = env.get_template('report_card.html')
+            template = env.get_template(template_name)
 
-            data['css_content'] = css_content
-            data['template_dir'] = templates_dir_str
+            context: dict[str, Any] = dict(data)
+            context['css_content'] = css_content
+            context['template_dir'] = templates_dir_str
+            context['report'] = data
 
-            data['student_name_font_size'] = get_font_size(data.get('student_name', ''))
-            data['father_name_font_size'] = get_font_size(data.get('father_name', ''))
-
-            html_content = template.render(**data)
+            html_content = template.render(**context)
             return html_content
 
         except Exception as exc:  # pragma: no cover
             raise Exception(f"Error rendering template: {exc}") from exc
 
     @staticmethod
-    def generate_pdf(filename, data):
+    def generate_pdf(filename: str, data: dict[str, Any], template_name: str = 'report_card.html'):
         """
         Generate PDF from HTML template
 
         Args:
-            filename (str): Name for PDF file (e.g., "StudentName_ReportCard_2025-2026")
-            data (dict): Dictionary with all student/marks data
+            filename (str): Base name for the PDF file
+            data (dict): Dictionary with payload data
+            template_name (str): Template filename to render
 
         Returns:
             tuple: (success: bool, message: str, pdf_path: str or None)
@@ -93,7 +106,7 @@ class PDFManager:
             from weasyprint import HTML
 
             PDFManager.ensure_output_dir()
-            html_content = PDFManager.render_template(data)
+            html_content = PDFManager.render_template(data, template_name)
 
             temp_html = PDFManager.OUTPUT_DIR / "temp_report.html"
             with open(temp_html, 'w', encoding='utf-8') as handle:

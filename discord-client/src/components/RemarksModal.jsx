@@ -1,9 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export default function RemarksModal({ open, remarks, onInsert, onSave, onClose }) {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [draft, setDraft] = useState('');
+
+  useEffect(() => {
+    if (open) {
+      // Prevent body scrolling when modal is open
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Restore body scrolling when modal is closed
+      document.body.style.overflow = '';
+    }
+
+    // Cleanup function to restore scrolling if component unmounts
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [open]);
 
   const handleAdd = () => {
     if (!draft.trim()) return;
@@ -27,12 +42,20 @@ export default function RemarksModal({ open, remarks, onInsert, onSave, onClose 
   return (
     <AnimatePresence>
       {open && (
-        <motion.div className="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+        <div style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', overflow: 'hidden', zIndex: 20 }}>
+          <motion.div
+            className="modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+          />
           <motion.div
             className="modal-panel glass-surface"
             initial={{ scale: 0.92, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.92, opacity: 0 }}
+            onClick={(e) => e.stopPropagation()}
           >
             <header>
               <div>
@@ -76,7 +99,7 @@ export default function RemarksModal({ open, remarks, onInsert, onSave, onClose 
               </button>
             </footer>
           </motion.div>
-        </motion.div>
+        </div>
       )}
     </AnimatePresence>
   );

@@ -623,11 +623,6 @@ textarea.input.dark:focus {
   color: var(--text-muted);
 }
 
-.marks-body {
-  max-height: 480px;
-  overflow-y: auto;
-}
-
 .marks-row:nth-child(even) {
   background: rgba(255, 255, 255, 0.02);
 }
@@ -733,8 +728,6 @@ textarea {
 }
 
 .remarks-list {
-  max-height: 220px;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 8px;

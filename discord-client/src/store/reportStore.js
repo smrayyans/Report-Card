@@ -7,6 +7,7 @@ const useReportStore = create((set, get) => ({
   remarks: [],
   subjects: [],
   loading: false,
+  queueCount: 0,
   async fetchInitial() {
     if (get().loading) return;
     set({ loading: true });
@@ -30,6 +31,10 @@ const useReportStore = create((set, get) => ({
       set({ loading: false });
       throw error;
     }
+  },
+  async refreshQueueCount() {
+    const response = await api.get('/reports/queue');
+    set({ queueCount: response.data.count || 0 });
   },
   async saveFilters(nextFilters) {
     await api.put('/filters', { filters: nextFilters });
@@ -61,6 +66,16 @@ const useReportStore = create((set, get) => ({
   async deleteSubject(subjectName) {
     await api.delete(`/subjects/${encodeURIComponent(subjectName)}`);
     set((state) => ({ subjects: state.subjects.filter((s) => s.subject_name !== subjectName) }));
+  },
+  async saveReport(payload) {
+    const response = await api.post('/reports/save', payload);
+    set({ queueCount: response.data.count || 0 });
+    return response.data;
+  },
+  async exportReports() {
+    const response = await api.post('/reports/export');
+    set({ queueCount: 0 });
+    return response.data;
   },
 
 }));

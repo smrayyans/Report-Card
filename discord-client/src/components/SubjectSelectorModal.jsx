@@ -18,9 +18,25 @@ export default function SubjectSelectorModal({
 
   useEffect(() => {
     if (open) {
-      setDraftSelection(selectedSubjects.map((subject) => subject.name));
+      // Check if '1-4' filter exists and apply it by default
+      if (filters && filters['1-4']) {
+        setActiveFilter('1-4');
+        setDraftSelection(filters['1-4']);
+      } else {
+        setDraftSelection(selectedSubjects.map((subject) => subject.name));
+      }
+      // Prevent body scrolling when modal is open
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Restore body scrolling when modal is closed
+      document.body.style.overflow = '';
     }
-  }, [selectedSubjects, open]);
+
+    // Cleanup function to restore scrolling if component unmounts
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedSubjects, open, filters]);
 
   const filteredSubjects = useMemo(() => {
     const query = search.toLowerCase();
@@ -68,12 +84,20 @@ export default function SubjectSelectorModal({
   return (
     <AnimatePresence>
       {open && (
-        <motion.div className="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+        <div style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', overflow: 'hidden', zIndex: 20 }}>
+          <motion.div
+            className="modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+          />
           <motion.div
             className="modal-panel glass-surface"
             initial={{ scale: 0.92, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.92, opacity: 0 }}
+            onClick={(e) => e.stopPropagation()}
           >
             <header>
               <div>
@@ -141,7 +165,7 @@ export default function SubjectSelectorModal({
               </div>
             </footer>
           </motion.div>
-        </motion.div>
+        </div>
       )}
     </AnimatePresence>
   );

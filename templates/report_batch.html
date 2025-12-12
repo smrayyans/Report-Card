@@ -1,0 +1,7 @@
+{% extends "report_card_base.html" %}
+
+{% block body %}
+    {% for report in records %}
+        {% include "report_card_sheet.html" %}
+    {% endfor %}
+{% endblock %}

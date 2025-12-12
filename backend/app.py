@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -118,6 +119,30 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def ensure_report_queue_table():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS report_queue (
+            id SERIAL PRIMARY KEY,
+            payload JSONB NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+
+@app.on_event("startup")
+def initialize_report_queue():
+    try:
+        ensure_report_queue_table()
+    except Exception as exc:  # pragma: no cover
+        print(f"Unable to prepare report queue table: {exc}")
 
 
 @app.get("/health")
@@ -640,6 +665,64 @@ def save_remarks(payload: RemarksPayload):
     with open(REMARKS_FILE, "w", encoding="utf-8") as handle:
         json.dump({"presets": payload.presets}, handle, indent=2)
     return {"status": "ok"}
+
+
+@app.post("/reports/save")
+def save_report(payload: ReportRequest):
+    data = payload.dict(by_alias=True)
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO report_queue (payload) VALUES (%s)", (json.dumps(data),))
+        cursor.execute("SELECT COUNT(*) AS count FROM report_queue")
+        count = cursor.fetchone()[0]
+        conn.commit()
+        return {"status": "ok", "count": count}
+    finally:
+        conn.close()
+
+
+@app.get("/reports/queue")
+def report_queue():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) AS count FROM report_queue")
+    count = cursor.fetchone()[0]
+    conn.close()
+    return {"count": count}
+
+
+@app.post("/reports/export")
+def export_saved_reports():
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
+    try:
+        cursor.execute("SELECT id, payload FROM report_queue ORDER BY id")
+        rows = cursor.fetchall()
+        if not rows:
+            raise HTTPException(status_code=400, detail="No saved reports available for export.")
+
+        records = [row["payload"] for row in rows]
+        filename = f"Faizan_Report_Batch_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        success, message, pdf_path = PDFManager.generate_pdf(
+            filename,
+            {"records": records},
+            template_name="report_batch.html",
+        )
+        if not success:
+            raise HTTPException(status_code=500, detail=message)
+
+        cursor.execute("DELETE FROM report_queue")
+        conn.commit()
+
+        pdf_file = Path(pdf_path)
+        return {
+            "message": message,
+            "file": pdf_file.name,
+            "download_url": f"/reports/files/{pdf_file.name}",
+        }
+    finally:
+        conn.close()
 
 
 @app.post("/reports/pdf")

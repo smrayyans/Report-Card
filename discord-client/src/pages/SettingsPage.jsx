@@ -29,6 +29,7 @@ export default function SettingsPage() {
   const [newSubjectName, setNewSubjectName] = useState('');
   const [newSubjectType, setNewSubjectType] = useState('Core');
   const [editingSubject, setEditingSubject] = useState(null);
+  const [subjectsExpanded, setSubjectsExpanded] = useState(false);
 
   useEffect(() => {
     if (!config && !loading) {
@@ -264,90 +265,105 @@ export default function SettingsPage() {
       </section>
 
       <section className="panel glass-surface">
-        <header className="panel-header">
+        <header
+          className="panel-header"
+          onClick={() => setSubjectsExpanded(!subjectsExpanded)}
+          style={{ cursor: 'pointer' }}
+        >
           <div>
             <p className="eyebrow">Database</p>
             <h3>Subjects Management</h3>
           </div>
+          <button
+            className="btn btn-secondary"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSubjectsExpanded(!subjectsExpanded);
+            }}
+          >
+            {subjectsExpanded ? 'Collapse' : 'Expand'}
+          </button>
         </header>
-        <div className="settings-flex">
-          <div className="subjects-manager">
-            <h4>All Subjects</h4>
-            <div className="subjects-list scroll-area">
-              {subjects?.length ? (
-                subjects.map((subject) => (
-                  <div key={subject.subject_name} className="subject-item">
-                    {editingSubject?.oldName === subject.subject_name ? (
-                      <div className="subject-edit-form">
-                        <input
-                          className="input dark"
-                          value={editingSubject.newName}
-                          onChange={(e) => setEditingSubject({ ...editingSubject, newName: e.target.value })}
-                          placeholder="Subject name"
-                        />
-                        <select
-                          className="input dark"
-                          value={editingSubject.type}
-                          onChange={(e) => setEditingSubject({ ...editingSubject, type: e.target.value })}
-                        >
-                          <option value="Core">Core</option>
-                          <option value="Non-Core">Non-Core</option>
-                        </select>
-                        <button className="btn btn-primary" onClick={handleUpdateSubject}>
-                          Save
-                        </button>
-                        <button className="btn btn-ghost" onClick={() => setEditingSubject(null)}>
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="subject-info">
-                          <strong>{subject.subject_name}</strong>
-                          <span className="subject-type">{subject.type}</span>
-                        </div>
-                        <div className="subject-actions">
-                          <button
-                            className="btn btn-text"
-                            onClick={() =>
-                              setEditingSubject({
-                                oldName: subject.subject_name,
-                                newName: subject.subject_name,
-                                type: subject.type,
-                              })
-                            }
+        {subjectsExpanded && (
+          <div className="settings-flex">
+            <div className="subjects-manager">
+              <h4>All Subjects</h4>
+              <div className="subjects-list">
+                {subjects?.length ? (
+                  subjects.map((subject) => (
+                    <div key={subject.subject_name} className="subject-item">
+                      {editingSubject?.oldName === subject.subject_name ? (
+                        <div className="subject-edit-form">
+                          <input
+                            className="input dark"
+                            value={editingSubject.newName}
+                            onChange={(e) => setEditingSubject({ ...editingSubject, newName: e.target.value })}
+                            placeholder="Subject name"
+                          />
+                          <select
+                            className="input dark"
+                            value={editingSubject.type}
+                            onChange={(e) => setEditingSubject({ ...editingSubject, type: e.target.value })}
                           >
-                            Edit
+                            <option value="Core">Core</option>
+                            <option value="Non-Core">Non-Core</option>
+                          </select>
+                          <button className="btn btn-primary" onClick={handleUpdateSubject}>
+                            Save
                           </button>
-                          <button className="btn btn-text" onClick={() => handleDeleteSubject(subject.subject_name)}>
-                            Delete
+                          <button className="btn btn-ghost" onClick={() => setEditingSubject(null)}>
+                            Cancel
                           </button>
                         </div>
-                      </>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <p className="muted">No subjects found.</p>
-              )}
-            </div>
-            <div className="subject-add-form">
-              <input
-                className="input dark"
-                placeholder="New subject name"
-                value={newSubjectName}
-                onChange={(e) => setNewSubjectName(e.target.value)}
-              />
-              <select className="input dark" value={newSubjectType} onChange={(e) => setNewSubjectType(e.target.value)}>
-                <option value="Core">Core</option>
-                <option value="Non-Core">Non-Core</option>
-              </select>
-              <button className="btn btn-primary" onClick={handleAddSubject}>
-                Add Subject
-              </button>
+                      ) : (
+                        <>
+                          <div className="subject-info">
+                            <strong>{subject.subject_name}</strong>
+                            <span className="subject-type">{subject.type}</span>
+                          </div>
+                          <div className="subject-actions">
+                            <button
+                              className="btn btn-text"
+                              onClick={() =>
+                                setEditingSubject({
+                                  oldName: subject.subject_name,
+                                  newName: subject.subject_name,
+                                  type: subject.type,
+                                })
+                              }
+                            >
+                              Edit
+                            </button>
+                            <button className="btn btn-text" onClick={() => handleDeleteSubject(subject.subject_name)}>
+                              Delete
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="muted">No subjects found.</p>
+                )}
+              </div>
+              <div className="subject-add-form">
+                <input
+                  className="input dark"
+                  placeholder="New subject name"
+                  value={newSubjectName}
+                  onChange={(e) => setNewSubjectName(e.target.value)}
+                />
+                <select className="input dark" value={newSubjectType} onChange={(e) => setNewSubjectType(e.target.value)}>
+                  <option value="Core">Core</option>
+                  <option value="Non-Core">Non-Core</option>
+                </select>
+                <button className="btn btn-primary" onClick={handleAddSubject}>
+                  Add Subject
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </section>
     </div>
   );

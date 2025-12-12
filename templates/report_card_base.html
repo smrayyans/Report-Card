@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Faizan Academy - Report Cards</title>
+    <style>
+        {{ css_content }}
+
+        /* Override for display values */
+        .display-value {
+            border-bottom: 1px solid #000;
+            padding: 2px 5px;
+            display: inline-block;
+            min-width: 150px;
+        }
+
+        .info-field span {
+            border-bottom: 1px solid #000;
+            padding: 2px 5px;
+        }
+
+        .term-section span {
+            border-bottom: 1px solid #000;
+            padding: 2px 5px;
+            display: inline-block;
+            min-width: 150px;
+        }
+
+        /* Absent styling */
+        .absent-text {
+            color: #e74c3c;
+            font-style: italic;
+            font-weight: bold;
+        }
+
+        .report-sheet {
+            page-break-after: always;
+        }
+
+        .report-sheet:last-of-type {
+            page-break-after: auto;
+        }
+
+        .page-break {
+            page-break-after: always;
+            height: 0;
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+    {% block body %}{% endblock %}
+</body>
+
+</html>

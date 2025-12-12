@@ -69,10 +69,13 @@ export default function ReportsPage() {
   const filters = useReportStore((state) => state.filters);
   const remarks = useReportStore((state) => state.remarks);
   const subjects = useReportStore((state) => state.subjects);
-  const loading = useReportStore((state) => state.loading);
   const fetchInitial = useReportStore((state) => state.fetchInitial);
   const saveFilters = useReportStore((state) => state.saveFilters);
   const saveRemarks = useReportStore((state) => state.saveRemarks);
+  const queueCount = useReportStore((state) => state.queueCount);
+  const refreshQueueCount = useReportStore((state) => state.refreshQueueCount);
+  const saveReport = useReportStore((state) => state.saveReport);
+  const exportReports = useReportStore((state) => state.exportReports);
 
   useEffect(() => {
     fetchInitial().catch(() =>
@@ -85,6 +88,12 @@ export default function ReportsPage() {
   }, [fetchInitial, toast]);
 
   useEffect(() => {
+    refreshQueueCount().catch(() => {
+      console.warn('Unable to fetch report queue count.');
+    });
+  }, [refreshQueueCount]);
+
+  useEffect(() => {
     if (config && !form.session) {
       setForm((prev) => ({
         ...prev,
@@ -93,11 +102,22 @@ export default function ReportsPage() {
     }
   }, [config, form.session]);
 
+
+  const buildDefaultSubjects = () => {
+    if (!subjects.length || !filters) return [];
+    const baseList = filters['1-4']
+      ? subjects.filter((subject) => filters['1-4'].includes(subject.subject_name))
+      : subjects;
+    return baseList.map((subject) =>
+      createSubjectRow(subject.subject_name, subject.type, config?.default_max_marks),
+    );
+  };
+
   useEffect(() => {
-    if (subjects.length && !selectedSubjects.length) {
-      setSelectedSubjects(subjects.map((subject) => createSubjectRow(subject.subject_name, subject.type, config?.default_max_marks)));
+    if (subjects.length && !selectedSubjects.length && filters) {
+      setSelectedSubjects(buildDefaultSubjects());
     }
-  }, [subjects, selectedSubjects.length, config]);
+  }, [subjects, selectedSubjects.length, config, filters]);
 
   const computedRows = useMemo(() => selectedSubjects.map((row) => computeRow(row)), [selectedSubjects]);
 
@@ -179,11 +199,7 @@ export default function ReportsPage() {
     }
   };
 
-  const generatePdf = async () => {
-    if (!form.studentName.trim() || !form.classSec.trim()) {
-      toast({ type: 'warning', title: 'Missing data', message: 'Fill student name and class before generating PDF.' });
-      return;
-    }
+  const buildReportPayload = () => {
     const payload = {
       student_name: form.studentName.trim(),
       father_name: form.fatherName.trim(),
@@ -207,7 +223,6 @@ export default function ReportsPage() {
       },
       marks_data: {},
     };
-
 
     computedRows.forEach((row) => {
       if (row.cwAbsent && row.teAbsent) {
@@ -233,16 +248,54 @@ export default function ReportsPage() {
       }
     });
 
+    return payload;
+  };
 
+  const handleSaveReport = async () => {
+    if (!form.studentName.trim() || !form.classSec.trim()) {
+      toast({ type: 'warning', title: 'Missing data', message: 'Enter student name and class before saving.' });
+      return;
+    }
     try {
-      const response = await api.post('/reports/pdf', payload);
-      setPdfInfo(response.data);
-      toast({ type: 'success', title: 'PDF ready', message: 'Report generated successfully.' });
+      const payload = buildReportPayload();
+      const response = await saveReport(payload);
+      resetForm();
+      toast({
+        type: 'success',
+        title: 'Saved',
+        message: `Record stored. ${response.count ?? 0} report(s) ready for export.`,
+      });
     } catch (error) {
       toast({
         type: 'error',
-        title: 'PDF failed',
-        message: error.response?.data?.detail || 'Unable to render PDF',
+        title: 'Save failed',
+        message: error.response?.data?.detail || 'Unable to store the report.',
+      });
+    }
+  };
+
+  const handleExportBatch = async () => {
+    if (queueCount === 0) {
+      toast({
+        type: 'warning',
+        title: 'Nothing to export',
+        message: 'Save at least one report before exporting.',
+      });
+      return;
+    }
+    try {
+      const response = await exportReports();
+      setPdfInfo(response);
+      toast({
+        type: 'success',
+        title: 'Batch exported',
+        message: 'All saved reports were compiled into a single PDF.',
+      });
+    } catch (error) {
+      toast({
+        type: 'error',
+        title: 'Export failed',
+        message: error.response?.data?.detail || 'Unable to export saved reports.',
       });
     }
   };
@@ -265,6 +318,7 @@ export default function ReportsPage() {
       remarks: '',
       date: dayjs().format('YYYY-MM-DD'),
     });
+    setSelectedSubjects(buildDefaultSubjects());
     setPdfInfo(null);
   };
 
@@ -434,11 +488,10 @@ export default function ReportsPage() {
             ))}
           </div>
           <div className="marks-body">
-            {computedRows.map((row) => (
+            {computedRows.map((row, rowIndex) => (
               <div key={row.name} className="marks-row">
                 <span>
                   <strong>{row.name}</strong>
-                  <small>{row.type}</small>
                 </span>
                 <input
                   className="input dark"
@@ -446,6 +499,28 @@ export default function ReportsPage() {
                   disabled={row.cwAbsent}
                   onChange={(event) => updateSubject(row.name, 'coursework', event.target.value)}
                   placeholder={row.cwAbsent ? 'Absent' : '0'}
+                  data-row={rowIndex}
+                  data-col={0}
+                  onKeyDown={(e) => {
+                    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                      e.preventDefault();
+                      const row = parseInt(e.target.dataset.row);
+                      const col = parseInt(e.target.dataset.col);
+                      let newRow = row;
+                      let newCol = col;
+
+                      if (e.key === 'ArrowUp') newRow = Math.max(0, row - 1);
+                      if (e.key === 'ArrowDown') newRow = Math.min(computedRows.length - 1, row + 1);
+                      if (e.key === 'ArrowLeft') newCol = Math.max(0, col - 1);
+                      if (e.key === 'ArrowRight') newCol = Math.min(2, col + 1);
+
+                      const nextInput = document.querySelector(`input[data-row="${newRow}"][data-col="${newCol}"]`);
+                      if (nextInput && !nextInput.disabled) {
+                        nextInput.focus();
+                        nextInput.select();
+                      }
+                    }
+                  }}
                 />
                 <input
                   className="input dark"
@@ -453,6 +528,28 @@ export default function ReportsPage() {
                   disabled={row.teAbsent}
                   onChange={(event) => updateSubject(row.name, 'termExam', event.target.value)}
                   placeholder={row.teAbsent ? 'Absent' : '0'}
+                  data-row={rowIndex}
+                  data-col={1}
+                  onKeyDown={(e) => {
+                    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                      e.preventDefault();
+                      const row = parseInt(e.target.dataset.row);
+                      const col = parseInt(e.target.dataset.col);
+                      let newRow = row;
+                      let newCol = col;
+
+                      if (e.key === 'ArrowUp') newRow = Math.max(0, row - 1);
+                      if (e.key === 'ArrowDown') newRow = Math.min(computedRows.length - 1, row + 1);
+                      if (e.key === 'ArrowLeft') newCol = Math.max(0, col - 1);
+                      if (e.key === 'ArrowRight') newCol = Math.min(2, col + 1);
+
+                      const nextInput = document.querySelector(`input[data-row="${newRow}"][data-col="${newCol}"]`);
+                      if (nextInput && !nextInput.disabled) {
+                        nextInput.focus();
+                        nextInput.select();
+                      }
+                    }
+                  }}
                 />
                 <select className="input dark" value={row.maxMarks} onChange={(event) => updateSubject(row.name, 'maxMarks', event.target.value)}>
                   {(config?.max_marks_options || [50, 75, 100]).map((option) => (
@@ -499,8 +596,16 @@ export default function ReportsPage() {
             <button className="btn btn-ghost" onClick={resetForm}>
               Reset
             </button>
-            <button className="btn btn-primary" onClick={generatePdf} disabled={loading}>
-              Generate PDF
+            <button className="btn btn-secondary" type="button" onClick={handleSaveReport}>
+              Save
+            </button>
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={handleExportBatch}
+              disabled={queueCount === 0}
+            >
+              {queueCount ? `Export(${queueCount})` : 'Export'}
             </button>
           </div>
         </div>
