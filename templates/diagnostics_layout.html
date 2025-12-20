@@ -1,0 +1,97 @@
+{% macro render_diagnostics(report, template_dir) -%}
+<div class="page">
+  {% set asset_base = template_asset_base or ('file:///' ~ template_dir) %}
+  <div class="header">
+    <img class="logo" src="{{ asset_base }}/faizan_academy_logo.png" alt="Faizan Academy logo">
+    <div class="header-content">
+      <h1 class="school-name">FAIZAN ACADEMY</h1>
+      <div class="school-subtitle">Under The Management of Memon Madressah Faizul Uloom (Regd.)</div>
+      <div class="school-address">ST 8/A, Opp. Memon Siddigbad, Haji Rasheed "B" Area, Karachi-75950</div>
+      <div class="school-meta">Phone: 021-36370112 | Email: faizanacademy03@gmail.com</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="diag-head">
+    <h1>{{ 'Diagnostics Examination' }}</h1>
+  </div>
+
+  <div class="diag-lines">
+    <div class="diag-line">
+      <div class="diag-field">
+        <span class="diag-label">Name:</span>
+        <span class="diag-value">{{ report.student_name }}</span>
+      </div>
+      <div class="diag-field">
+        <span class="diag-label">Father's Name:</span>
+        <span class="diag-value">{{ report.father_name }}</span>
+      </div>
+    </div>
+    <div class="diag-line">
+      <div class="diag-field">
+        <span class="diag-label">G.R No:</span>
+        <span class="diag-value">{{ report.gr_no }}</span>
+      </div>
+      <div class="diag-field">
+        <span class="diag-label">Class / Sec:</span>
+        <span class="diag-value">{{ report.class_sec }}</span>
+      </div>
+    </div>
+    <div class="diag-line">
+      <div class="diag-field">
+        <span class="diag-label">Attendance:</span>
+        <span class="diag-value">{{ report.attendance }}</span>
+      </div>
+      <div class="diag-field">
+        <span class="diag-label">Out of:</span>
+        <span class="diag-value">{{ report.attendance_out_of }}</span>
+      </div>
+    </div>
+    <div class="diag-line">
+      <div class="diag-field">
+        <span class="diag-label">Overall Remark:</span>
+        <span class="diag-value">{{ report.overall_remark }}</span>
+      </div>
+      <div class="diag-field">
+        <span class="diag-label">Term:</span>
+        <span class="diag-value">{{ report.term }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="diag-grid">
+    {% for section in report.diagnostics_sections %}
+    <div class="diag-card">
+      <div class="diag-card-title">{{ section.title }}</div>
+      <table class="diag-table">
+        <tbody>
+          {% for row in section.rows %}
+          <tr>
+            <td>{{ row.label }}</td>
+            <td>{{ row.value }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="diag-comment">
+    <span class="diag-label">Comment:</span>
+    <span class="diag-value">{{ report.comment }}</span>
+  </div>
+
+  <div class="diag-signatures">
+    <div class="diag-signature">
+      <div class="line"></div>
+      <div>Teacher's Signature</div>
+    </div>
+    <div class="diag-signature">
+      <div class="line"></div>
+      <div>Principal's Signature</div>
+    </div>
+  </div>
+</div>
+{%- endmacro %}

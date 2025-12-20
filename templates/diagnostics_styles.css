@@ -1,0 +1,245 @@
+@page {
+  size: A4;
+  margin: 0;
+}
+
+@font-face {
+  font-family: 'Calibri';
+  src: url('calibri-regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Calibri';
+  src: url('calibri-italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Revue';
+  src: url('Revue.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Calibri', Arial, sans-serif;
+  color: #111;
+  font-size: 11px;
+  background: #fff;
+}
+
+.page {
+  width: 210mm;
+  height: 297mm;
+  padding: 12mm 14mm 10mm;
+  overflow: hidden;
+  page-break-after: always;
+}
+
+.page:last-child {
+  page-break-after: auto;
+}
+
+@media screen {
+  body {
+    background: #e9e9e9;
+  }
+
+  .page {
+    margin: 10mm auto;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.header {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 6px;
+}
+
+.logo {
+  width: 100px;
+  height: auto;
+}
+
+.header-content {
+  text-align: center;
+}
+
+.school-name {
+  font-family: 'Revue', 'Calibri', sans-serif;
+  font-size: 40px;
+  margin: 0;
+  letter-spacing: 1px;
+}
+
+.school-subtitle,
+.school-address {
+  margin: 2px 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.school-meta {
+  margin: 4px 0 8px;
+  font-size: 10px;
+}
+
+.divider {
+  margin-top: 20px;
+  border-top: 2px solid #111;
+  margin-bottom: 8px;
+}
+
+.diag-head {
+  text-align: center;
+  margin: 6px 0 10px;
+}
+
+.diag-head h2 {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: 0.6px;
+  font-weight: 700;
+}
+
+.diag-head h3 {
+  margin: 2px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.diag-subhead {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.diag-lines {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 8px;
+}
+
+.diag-line {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.diag-field {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.diag-label {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.diag-value {
+  flex: 1;
+  border-bottom: 1px solid #333;
+  padding-bottom: 2px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.diag-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 24px;
+  align-items: start;
+}
+
+.diag-card {
+  border: 1px solid #333;
+  break-inside: avoid;
+  align-self: start;
+}
+
+.diag-card-title {
+  background: #f1f1f1;
+  text-align: center;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 4px 6px;
+  text-transform: uppercase;
+}
+
+.diag-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.diag-table tr {
+  height: auto;
+}
+
+.diag-table td {
+  border: 1px solid #333;
+  padding: 4px 6px;
+  font-size: 10.5px;
+  vertical-align: middle;
+}
+
+.diag-table td:first-child {
+  width: 70%;
+}
+
+.diag-table td:last-child {
+  width: 30%;
+  text-align: center;
+  font-weight: 600;
+}
+
+.diag-comment {
+  margin-top: 30px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+}
+
+.diag-comment .diag-label {
+  min-width: 60px;
+}
+
+.diag-comment .diag-value {
+  text-align: left;
+}
+
+.diag-signatures {
+  margin-top: 60px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.diag-signature {
+  width: 40%;
+  text-align: center;
+}
+
+.diag-signature .line {
+  border-top: 1px solid #111;
+  margin-bottom: 4px;
+}

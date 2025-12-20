@@ -861,6 +861,88 @@ def preview_report_sample():
     return HTMLResponse(content=html_content)
 
 
+@app.get("/reports/preview/diagnostics", response_class=HTMLResponse)
+def preview_diagnostics_sample():
+    sample = {
+        "student_name": "Muhammad Hashim",
+        "father_name": "Taha",
+        "class_sec": "KG-A",
+        "session": "2025-26",
+        "gr_no": "3779",
+        "attendance": "75",
+        "attendance_out_of": "82",
+        "overall_remark": "Excellent",
+        "term": "Mid Term",
+        "campus": "Campus I",
+        "result_title": "Result Sheet",
+        "exam_title": "Mid Term Examination",
+        "comment": "Muhammad Hashim has shown excellent performance in all academic areas. Well done!",
+        "diagnostics_sections": [
+            {
+                "title": "General Progress",
+                "rows": [
+                    {"label": "Punctuality", "value": "Good"},
+                    {"label": "Conduct", "value": "Very Good"},
+                    {"label": "Tidiness", "value": "Excellent"},
+                    {"label": "Works Independently & Neatly", "value": "Excellent"},
+                    {"label": "Shows Interest & Efforts", "value": "Excellent"},
+                    {"label": "Follows Instructions", "value": "Excellent"},
+                    {"label": "Confidence", "value": "Excellent"},
+                ],
+            },
+            {
+                "title": "Maths",
+                "rows": [
+                    {"label": "Oral Counting", "value": "Excellent"},
+                    {"label": "Recognition of Numbers", "value": "Very Good"},
+                    {"label": "Tracing / Writing of Numbers", "value": "Excellent"},
+                    {"label": "Recognition of Shapes", "value": "Excellent"},
+                    {"label": "Understanding of Concept", "value": "Excellent"},
+                ],
+            },
+            {
+                "title": "English",
+                "rows": [
+                    {"label": "Recognition of Sound / Letter", "value": "Fair"},
+                    {"label": "Tracing / Writing of Letter", "value": "Excellent"},
+                    {"label": "Listening / Speaking", "value": "Fair"},
+                    {"label": "Recitation of Rhymes", "value": "Good"},
+                    {"label": "Reading", "value": "Fair"},
+                ],
+            },
+            {
+                "title": "Urdu",
+                "rows": [
+                    {"label": "Recognition of Sound / Letter", "value": "Very Good"},
+                    {"label": "Tracing / Writing of Letter", "value": "Excellent"},
+                    {"label": "Recitation of Rhymes", "value": "Excellent"},
+                    {"label": "Reading", "value": "Very Good"},
+                ],
+            },
+            {
+                "title": "Other Subjects",
+                "rows": [
+                    {"label": "General Knowledge - Oral", "value": "Excellent"},
+                    {"label": "Art / Drawing", "value": "Excellent"},
+                ],
+            },
+            {
+                "title": "Islamiyat",
+                "rows": [
+                    {"label": "Islamiyat - Oral", "value": "Excellent"},
+                ],
+            },
+        ],
+    }
+    html_content = PDFManager.render_template(
+        sample,
+        template_name="report_diagnostics_preview.html",
+        asset_base="/templates",
+        css_name="diagnostics_styles.css",
+    )
+    return HTMLResponse(content=html_content)
+
+
 @app.get("/reports/files/{file_name}")
 def download_pdf(file_name: str):
     safe_name = Path(file_name).name

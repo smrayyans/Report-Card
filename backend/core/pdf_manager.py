@@ -56,6 +56,7 @@ class PDFManager:
         data: dict[str, Any],
         template_name: str = 'report_card.html',
         asset_base: str | None = None,
+        css_name: str = 'styles.css',
     ):
         """
         Render HTML template with student data using Jinja2
@@ -70,7 +71,7 @@ class PDFManager:
         try:
             PDFManager.annotate_font_sizes(data)
 
-            css_path = PDFManager.TEMPLATES_DIR / 'styles.css'
+            css_path = PDFManager.TEMPLATES_DIR / css_name
             with open(css_path, 'r', encoding='utf-8') as handle:
                 css_content = handle.read()
 
@@ -100,7 +101,12 @@ class PDFManager:
             raise Exception(f"Error rendering template: {exc}") from exc
 
     @staticmethod
-    def generate_pdf(filename: str, data: dict[str, Any], template_name: str = 'report_card.html'):
+    def generate_pdf(
+        filename: str,
+        data: dict[str, Any],
+        template_name: str = 'report_card.html',
+        css_name: str = 'styles.css',
+    ):
         """
         Generate PDF from HTML template
 
@@ -116,7 +122,7 @@ class PDFManager:
             from weasyprint import HTML
 
             PDFManager.ensure_output_dir()
-            html_content = PDFManager.render_template(data, template_name)
+            html_content = PDFManager.render_template(data, template_name, css_name=css_name)
 
             temp_html = PDFManager.OUTPUT_DIR / "temp_report.html"
             with open(temp_html, 'w', encoding='utf-8') as handle:

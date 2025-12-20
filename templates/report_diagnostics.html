@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Diagnostics Report</title>
+    <style>
+      {{ css_content }}
+    </style>
+  </head>
+  <body>
+    {% from "diagnostics_layout.html" import render_diagnostics %}
+    {{ render_diagnostics(report, template_dir) }}
+  </body>
+</html>
