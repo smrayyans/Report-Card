@@ -42,6 +42,7 @@ body {
   padding: 12mm 14mm 10mm;
   overflow: hidden;
   page-break-after: always;
+  position: relative;
 }
 
 .page:last-child {
@@ -68,6 +69,117 @@ body {
   justify-content: center;
   gap: 14px;
   margin-bottom: 6px;
+}
+
+.diag-content {
+  position: relative;
+  z-index: 1;
+}
+
+.diag-decor {
+  position: absolute;
+  width: 54px;
+  height: 54px;
+  border: 1px solid #c5c5c5;
+  z-index: 0;
+}
+
+.diag-decor-top-left {
+  top: 6mm;
+  left: 6mm;
+  border-right: 0;
+  border-bottom: 0;
+  border-radius: 0 0 54px 0;
+}
+
+.diag-decor-top-right {
+  top: 6mm;
+  right: 6mm;
+  border-left: 0;
+  border-bottom: 0;
+  border-radius: 0 0 0 54px;
+}
+
+.diag-decor-bottom-left {
+  bottom: 6mm;
+  left: 6mm;
+  border-right: 0;
+  border-top: 0;
+  border-radius: 0 54px 0 0;
+}
+
+.diag-decor-bottom-right {
+  bottom: 6mm;
+  right: 6mm;
+  border-left: 0;
+  border-top: 0;
+  border-radius: 54px 0 0 0;
+}
+
+.diag-frame {
+  position: absolute;
+  inset: 7mm;
+  border: 1px solid #bdbdbd;
+  z-index: 0;
+}
+
+.diag-frame::before {
+  content: '';
+  position: absolute;
+  inset: 3mm;
+  border: 1px dashed #d2d2d2;
+}
+
+.diag-ribbon {
+  position: relative;
+  margin: 6px auto 10px;
+  width: 72%;
+  text-align: center;
+  border: 1px solid #333;
+  padding: 6px 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.diag-ribbon::before,
+.diag-ribbon::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 24px;
+  height: 6px;
+  background: #333;
+  transform: translateY(-50%);
+}
+
+.diag-ribbon::before {
+  left: -24px;
+}
+
+.diag-ribbon::after {
+  right: -24px;
+}
+
+.diag-divider {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 24px;
+}
+
+.diag-divider::before,
+.diag-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid #333;
+}
+
+.diag-divider span {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
 }
 
 .logo {
@@ -138,7 +250,7 @@ h1 {
 .diag-lines {
   display: grid;
   gap: 6px;
-  margin: 28px 0 8px;
+  margin: 10px 0 8px;
 }
 
 .diag-line {
@@ -171,7 +283,7 @@ h1 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
-  margin-top: 24px;
+  margin-top: 14px;
   align-items: start;
 }
 
