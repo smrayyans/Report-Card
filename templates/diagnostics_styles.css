@@ -60,6 +60,7 @@ body {
   }
 }
 
+
 .header {
   margin-top: 20px;
   display: flex;
@@ -100,7 +101,12 @@ body {
 .divider {
   margin-top: 20px;
   border-top: 2px solid #111;
-  margin-bottom: 8px;
+  margin-bottom: 22px;
+}
+
+h1 {
+  font-family: 'Revue', 'Calibri', sans-serif;
+  margin-top: -10px;
 }
 
 .diag-head {
@@ -132,7 +138,7 @@ body {
 .diag-lines {
   display: grid;
   gap: 6px;
-  margin: 10px 0 8px;
+  margin: 28px 0 8px;
 }
 
 .diag-line {
@@ -170,7 +176,7 @@ body {
 }
 
 .diag-card {
-  border: 1px solid #333;
+  border: 0;
   break-inside: avoid;
   align-self: start;
 }
@@ -182,12 +188,16 @@ body {
   font-size: 11px;
   padding: 4px 6px;
   text-transform: uppercase;
+  border: 0.6px solid #333;
+  border-bottom: 0;
 }
 
 .diag-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
+  border: 0.6px solid #333;
+  border-top: 0;
 }
 
 .diag-table tr {
@@ -195,7 +205,7 @@ body {
 }
 
 .diag-table td {
-  border: 1px solid #333;
+  border: 0.6px solid #333;
   padding: 4px 6px;
   font-size: 10.5px;
   vertical-align: middle;
