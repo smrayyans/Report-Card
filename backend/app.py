@@ -18,7 +18,8 @@ import psycopg2
 from psycopg2 import extras
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -111,6 +112,8 @@ app = FastAPI(
     version="2.0.0",
     description="Backend service powering the Discord-inspired React client",
 )
+
+app.mount("/templates", StaticFiles(directory=str(PDFManager.TEMPLATES_DIR)), name="templates")
 
 app.add_middleware(
     CORSMiddleware,
@@ -739,6 +742,123 @@ def generate_pdf(payload: ReportRequest):
         "file": pdf_file.name,
         "download_url": f"/reports/files/{pdf_file.name}",
     }
+
+
+@app.post("/reports/preview", response_class=HTMLResponse)
+def preview_report(payload: ReportRequest):
+    data = payload.dict(by_alias=True)
+    html_content = PDFManager.render_template(data, asset_base="/templates")
+    return HTMLResponse(content=html_content)
+
+
+@app.get("/reports/preview", response_class=HTMLResponse)
+def preview_report_sample():
+    sample = {
+        "student_name": "Student Name",
+        "father_name": "Father Name",
+        "class_sec": "X-A",
+        "session": "2025-2026",
+        "gr_no": "00000",
+        "rank": "N/A",
+        "total_days": "0",
+        "days_attended": "0",
+        "days_absent": "0",
+        "term": "Annual Year",
+        "conduct": "Good",
+        "performance": "Excellent",
+        "progress": "Satisfactory",
+        "remarks": "Remarks will appear here.",
+        "status": "Passed",
+        "date": "01 January 2026",
+        "grand_totals": {
+            "cw": "0",
+            "te": "0",
+            "max": "0",
+            "obt": "0",
+            "pct": "0.0%",
+            "grade": "A1",
+        },
+        "marks_data": {
+            "Subject 1": {
+                "coursework": "0",
+                "termexam": "0",
+                "maxmarks": "100",
+                "obt": "0",
+                "pct": "0.0%",
+                "grade": "A1",
+                "is_absent": False,
+            },
+            "Subject 2": {
+                "coursework": "0",
+                "termexam": "0",
+                "maxmarks": "100",
+                "obt": "0",
+                "pct": "0.0%",
+                "grade": "A1",
+                "is_absent": False,
+            },
+            "Subject 3": {
+                "coursework": "0",
+                "termexam": "0",
+                "maxmarks": "100",
+                "obt": "0",
+                "pct": "0.0%",
+                "grade": "A1",
+                "is_absent": False,
+            },
+            "Subject 4": {
+                "coursework": "0",
+                "termexam": "0",
+                "maxmarks": "100",
+                "obt": "0",
+                "pct": "0.0%",
+                "grade": "A1",
+                "is_absent": False,
+            },
+            "Subject 5": {
+                "coursework": "0",
+                "termexam": "0",
+                "maxmarks": "100",
+                "obt": "0",
+                "pct": "0.0%",
+                "grade": "A1",
+                "is_absent": False,
+            },
+            "Subject 6": {
+                "coursework": "0",
+                "termexam": "0",
+                "maxmarks": "100",
+                "obt": "0",
+                "pct": "0.0%",
+                "grade": "A1",
+                "is_absent": False,
+            },
+            "Subject 7": {
+                "coursework": "0",
+                "termexam": "0",
+                "maxmarks": "100",
+                "obt": "0",
+                "pct": "0.0%",
+                "grade": "A1",
+                "is_absent": False,
+            },
+            "Subject 8": {
+                "coursework": "0",
+                "termexam": "0",
+                "maxmarks": "100",
+                "obt": "0",
+                "pct": "0.0%",
+                "grade": "A1",
+                "is_absent": False,
+            },
+        },
+    }
+    html_content = PDFManager.render_template(
+        sample,
+        template_name="report_preview.html",
+        asset_base="/templates",
+    )
+    return HTMLResponse(content=html_content)
 
 
 @app.get("/reports/files/{file_name}")

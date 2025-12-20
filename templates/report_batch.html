@@ -1,7 +1,16 @@
-{% extends "report_card_base.html" %}
-
-{% block body %}
-    {% for report in records %}
-        {% include "report_card_sheet.html" %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Report Batch</title>
+    <style>
+      {{ css_content }}
+    </style>
+  </head>
+  <body>
+    {% from "report_layout.html" import render_report %}
+    {% for record in records %}
+      {{ render_report(record, template_dir) }}
     {% endfor %}
-{% endblock %}
+  </body>
+</html>

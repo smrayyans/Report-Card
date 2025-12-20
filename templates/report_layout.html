@@ -1,0 +1,191 @@
+{% macro render_report(report, template_dir) -%}
+<div class="page">
+  {% set asset_base = template_asset_base or ('file:///' ~ template_dir) %}
+  <div class="header">
+    <img class="logo" src="{{ asset_base }}/faizan_academy_logo.png" alt="Faizan Academy logo">
+    <div class="header-content">
+      <h1 class="school-name">FAIZAN ACADEMY</h1>
+      <div class="school-subtitle">Under The Management of Memon Madressah Faizul Uloom (Regd.)</div>
+      <div class="school-address">ST 8/A, Opp. Memon Siddigbad, Haji Rasheed "B" Area, Karachi-75950</div>
+      <div class="school-meta">Phone: 021-36370112 | Email: faizanacademy03@gmail.com</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="term-row">
+    <div><strong>Term:</strong> {{ report.term }}</div>
+    <div><strong>Session:</strong> {{ report.session }}</div>
+  </div>
+
+  <div class="info-lines">
+    <div class="info-line info-line-split">
+      <div class="info-block">
+        <span class="info-label">Student's Name:</span>
+        <span class="info-fill">
+          <span style="font-size: {{ report.student_name_font_size or 18 }}px;">{{ report.student_name }}</span>
+        </span>
+      </div>
+      <div class="info-block">
+        <span class="info-label">Father's Name:</span>
+        <span class="info-fill">
+          <span style="font-size: {{ report.father_name_font_size or 18 }}px;">{{ report.father_name }}</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <table class="info-table">
+    <colgroup>
+      <col style="width: 12%;">
+      <col style="width: 21%;">
+      <col style="width: 12%;">
+      <col style="width: 21%;">
+      <col style="width: 12%;">
+      <col style="width: 22%;">
+    </colgroup>
+    <tr>
+      <th>Class/Sec:</th>
+      <td>{{ report.class_sec }}</td>
+      <th>G.R No:</th>
+      <td>{{ report.gr_no }}</td>
+      <th>Rank in Class:</th>
+      <td>{{ report.rank }}</td>
+    </tr>
+    <tr>
+      <th>Total School Days:</th>
+      <td>{{ report.total_days }}</td>
+      <th>Days Attended:</th>
+      <td>{{ report.days_attended }}</td>
+      <th>Days Absent:</th>
+      <td>{{ report.days_absent }}</td>
+    </tr>
+  </table>
+
+  <table class="marks-table" style="margin-top: 6px;">
+    <colgroup>
+      <col style="width: 28%;">
+      <col style="width: 12%;">
+      <col style="width: 12%;">
+      <col style="width: 10%;">
+      <col style="width: 10%;">
+      <col style="width: 14%;">
+      <col style="width: 14%;">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Subject</th>
+        <th>Course Work<br>Marks</th>
+        <th>Term Exam<br>Marks</th>
+        <th>Max</th>
+        <th>Obt</th>
+        <th>%</th>
+        <th>Grade</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for subject, row in report.marks_data.items() %}
+      <tr>
+        <td>{{ subject }}</td>
+        <td>{{ row.coursework }}</td>
+        <td>{{ row.termexam }}</td>
+        <td>{{ row.maxmarks }}</td>
+        <td>{{ row.obt }}</td>
+        <td>{{ row.pct }}</td>
+        <td>{{ row.grade }}</td>
+      </tr>
+      {% endfor %}
+      <tr class="grand-total">
+        <td>Grand Total</td>
+        <td>{{ report.grand_totals.cw }}</td>
+        <td>{{ report.grand_totals.te }}</td>
+        <td>{{ report.grand_totals.max }}</td>
+        <td>{{ report.grand_totals.obt }}</td>
+        <td>{{ report.grand_totals.pct }}</td>
+        <td>{{ report.grand_totals.grade }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="boxes">
+    <div class="box">
+      <div class="box-title">Conduct</div>
+      <div class="box-value">{{ report.conduct }}</div>
+    </div>
+    <div class="box">
+      <div class="box-title">Daily Performance</div>
+      <div class="box-value">{{ report.performance }}</div>
+    </div>
+    <div class="box">
+      <div class="box-title">Progress</div>
+      <div class="box-value">{{ report.progress }}</div>
+    </div>
+  </div>
+
+  <div class="remarks">
+    <label>Teacher's Remarks</label>
+    <div class="remarks-box">{{ report.remarks }}</div>
+  </div>
+
+  <div class="result-row">
+    <strong>Result Status:</strong>
+    <div>{{ report.status }}</div>
+  </div>
+
+  <div class="grading-key">
+    <div class="grading-title">Grading Key</div>
+    <table class="grading-table">
+      <colgroup>
+        <col style="width: 7%;">
+        <col style="width: 20%;">
+        <col style="width: 23%;">
+        <col style="width: 7%;">
+        <col style="width: 20%;">
+        <col style="width: 23%;">
+      </colgroup>
+      <tbody>
+        <tr>
+          <td class="grading-grade">A1</td>
+          <td>80% to 100%</td>
+          <td>Outstanding</td>
+          <td class="grading-grade">C</td>
+          <td>50% to 59%</td>
+          <td>Fair</td>
+        </tr>
+        <tr>
+          <td class="grading-grade">A</td>
+          <td>70% to 79%</td>
+          <td>Excellent</td>
+          <td class="grading-grade">D</td>
+          <td>40% to 49%</td>
+          <td>Satisfactory</td>
+        </tr>
+        <tr>
+          <td class="grading-grade">B</td>
+          <td>60% to 69%</td>
+          <td>Good</td>
+          <td class="grading-grade">U</td>
+          <td>Below 40%</td>
+          <td>Unsatisfactory</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="signatures">
+    <div class="signature">
+      <div class="line"></div>
+      <div>Class Teacher</div>
+    </div>
+    <div class="signature">
+      <div class="line"></div>
+      <div>Principal</div>
+    </div>
+    <div class="signature">
+      <div class="date-value">{{ report.date }}</div>
+      <div class="line"></div>
+      <div>Date</div>
+    </div>
+  </div>
+</div>
+{%- endmacro %}

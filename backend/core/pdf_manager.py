@@ -52,7 +52,11 @@ class PDFManager:
             apply(payload)
 
     @staticmethod
-    def render_template(data: dict[str, Any], template_name: str = 'report_card.html'):
+    def render_template(
+        data: dict[str, Any],
+        template_name: str = 'report_card.html',
+        asset_base: str | None = None,
+    ):
         """
         Render HTML template with student data using Jinja2
 
@@ -71,9 +75,14 @@ class PDFManager:
                 css_content = handle.read()
 
             templates_dir_str = str(PDFManager.TEMPLATES_DIR).replace('\\', '/')
-            css_content = css_content.replace("url('Revue.ttf')", f"url('file:///{templates_dir_str}/Revue.ttf')")
-            css_content = css_content.replace("url('calibri-regular.ttf')", f"url('file:///{templates_dir_str}/calibri-regular.ttf')")
-            css_content = css_content.replace("url('calibri-italic.ttf')", f"url('file:///{templates_dir_str}/calibri-italic.ttf')")
+            if asset_base:
+                css_content = css_content.replace("url('Revue.ttf')", f"url('{asset_base}/Revue.ttf')")
+                css_content = css_content.replace("url('calibri-regular.ttf')", f"url('{asset_base}/calibri-regular.ttf')")
+                css_content = css_content.replace("url('calibri-italic.ttf')", f"url('{asset_base}/calibri-italic.ttf')")
+            else:
+                css_content = css_content.replace("url('Revue.ttf')", f"url('file:///{templates_dir_str}/Revue.ttf')")
+                css_content = css_content.replace("url('calibri-regular.ttf')", f"url('file:///{templates_dir_str}/calibri-regular.ttf')")
+                css_content = css_content.replace("url('calibri-italic.ttf')", f"url('file:///{templates_dir_str}/calibri-italic.ttf')")
 
             env = Environment(loader=FileSystemLoader(str(PDFManager.TEMPLATES_DIR)))
             template = env.get_template(template_name)
@@ -82,6 +91,7 @@ class PDFManager:
             context['css_content'] = css_content
             context['template_dir'] = templates_dir_str
             context['report'] = data
+            context['template_asset_base'] = asset_base
 
             html_content = template.render(**context)
             return html_content
