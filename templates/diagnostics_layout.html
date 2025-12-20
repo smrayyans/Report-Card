@@ -1,7 +1,19 @@
 {% macro render_diagnostics(report, template_dir) -%}
 <div class="page">
   {% set asset_base = template_asset_base or ('file:///' ~ template_dir) %}
-  <div class="diag-frame"></div>
+  <div class="diag-frame diag-frame-main"></div>
+  <div class="diag-frame diag-frame-inner"></div>
+  <div class="diag-stars"></div>
+  <div class="diag-bubbles">
+    <span class="b1"></span>
+    <span class="b2"></span>
+    <span class="b3"></span>
+    <span class="b4"></span>
+  </div>
+  <div class="diag-plane"></div>
+  <div class="diag-rocket"></div>
+  <div class="diag-cloud diag-cloud-left"></div>
+  <div class="diag-cloud diag-cloud-right"></div>
   <div class="diag-decor diag-decor-top-left"></div>
   <div class="diag-decor diag-decor-top-right"></div>
   <div class="diag-decor diag-decor-bottom-left"></div>

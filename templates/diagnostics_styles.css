@@ -43,6 +43,7 @@ body {
   overflow: hidden;
   page-break-after: always;
   position: relative;
+  background: #fff;
 }
 
 .page:last-child {
@@ -118,16 +119,221 @@ body {
 
 .diag-frame {
   position: absolute;
-  inset: 7mm;
-  border: 1px solid #bdbdbd;
   z-index: 0;
 }
 
-.diag-frame::before {
+.diag-frame-main {
+  inset: 7mm;
+  /* border: 1px solid #bdbdbd; */
+  /* border-radius: 6mm; */
+}
+
+.diag-frame-inner {
+  inset: 10mm;
+}
+
+.diag-doodles {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.diag-doodles::before,
+.diag-doodles::after {
   content: '';
   position: absolute;
-  inset: 3mm;
-  border: 1px dashed #d2d2d2;
+  width: 70mm;
+  height: 70mm;
+  border: 2px solid #d0d0d0;
+  border-radius: 50%;
+  opacity: 0.7;
+}
+
+.diag-doodles::before {
+  top: -22mm;
+  left: -25mm;
+}
+
+.diag-doodles::after {
+  bottom: -26mm;
+  right: -28mm;
+}
+
+.diag-stars {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.diag-stars::before,
+.diag-stars::after {
+  content: '★';
+  position: absolute;
+  color: #bdbdbd;
+  font-size: 18px;
+  opacity: 0.8;
+}
+
+.diag-stars::before {
+  top: 28mm;
+  right: 20mm;
+}
+
+.diag-stars::after {
+  bottom: 36mm;
+  left: 22mm;
+}
+
+.diag-bubbles {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.diag-bubbles span {
+  position: absolute;
+  width: 5mm;
+  height: 5mm;
+  border: 1px solid #cfcfcf;
+  border-radius: 50%;
+  opacity: 0.9;
+}
+
+.diag-bubbles .b1 {
+  top: 33mm;
+  left: 14mm;
+}
+
+.diag-bubbles .b2 {
+  top: 29mm;
+  right: 26mm;
+}
+
+.diag-bubbles .b3 {
+  bottom: 42mm;
+  left: 38mm;
+}
+
+.diag-bubbles .b4 {
+  bottom: 26mm;
+  right: 44mm;
+}
+
+.diag-plane {
+  position: absolute;
+  bottom: 24mm;
+  right: 24mm;
+  width: 22mm;
+  height: 12mm;
+  border: 1px solid #bdbdbd;
+  border-radius: 2mm;
+  transform: rotate(-8deg);
+  background: #f7f7f7;
+}
+
+.diag-plane::before,
+.diag-plane::after {
+  content: '';
+  position: absolute;
+  border: 1px solid #bdbdbd;
+  background: #fff;
+}
+
+.diag-plane::before {
+  width: 10mm;
+  height: 4mm;
+  top: -3mm;
+  left: 4mm;
+  transform: skewX(-18deg);
+}
+
+.diag-plane::after {
+  width: 6mm;
+  height: 3mm;
+  bottom: -2mm;
+  right: 3mm;
+  transform: skewX(18deg);
+}
+
+.diag-rocket {
+  position: absolute;
+  bottom: 18mm;
+  left: 16mm;
+  width: 16mm;
+  height: 26mm;
+  border: 1px solid #bcbcbc;
+  border-radius: 8mm 8mm 4mm 4mm;
+  background: #f4f4f4;
+}
+
+.diag-rocket::before {
+  content: '';
+  position: absolute;
+  top: 5mm;
+  left: 4.5mm;
+  width: 7mm;
+  height: 7mm;
+  border: 1px solid #bcbcbc;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.diag-rocket::after {
+  content: '';
+  position: absolute;
+  bottom: -4mm;
+  left: 4mm;
+  width: 8mm;
+  height: 4mm;
+  border: 1px solid #bcbcbc;
+  border-top: 0;
+  border-radius: 0 0 4mm 4mm;
+  background: #fff;
+}
+
+.diag-cloud {
+  position: absolute;
+  width: 26mm;
+  height: 10mm;
+  border: 1px solid #c9c9c9;
+  border-radius: 8mm;
+  background: #fafafa;
+}
+
+.diag-cloud::before,
+.diag-cloud::after {
+  content: '';
+  position: absolute;
+  border: 1px solid #c9c9c9;
+  background: #fafafa;
+  border-radius: 50%;
+}
+
+.diag-cloud::before {
+  width: 8mm;
+  height: 8mm;
+  top: -4mm;
+  left: 4mm;
+}
+
+.diag-cloud::after {
+  width: 10mm;
+  height: 10mm;
+  top: -5mm;
+  right: 4mm;
+}
+
+.diag-cloud-left {
+  top: 24mm;
+  left: 13mm;
+}
+
+.diag-cloud-right {
+  top: 20mm;
+  right: 11mm;
 }
 
 .diag-ribbon {
