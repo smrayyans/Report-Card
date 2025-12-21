@@ -65,11 +65,20 @@ body {
 
 .header {
   margin-top: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
+  display: table;
+  margin-left: auto;
+  margin-right: auto;
   margin-bottom: 6px;
+}
+
+.header .logo,
+.header .header-content {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.header .header-content {
+  padding-left: 14px;
 }
 
 .diag-content {

@@ -62,11 +62,20 @@ body {
 
 .header {
   margin-top: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
+  display: table;
+  margin-left: auto;
+  margin-right: auto;
   margin-bottom: 6px;
+}
+
+.header .logo,
+.header .header-content {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.header .header-content {
+  padding-left: 14px;
 }
 
 .logo {
@@ -147,9 +156,24 @@ body {
 }
 
 .info-fill {
-  flex: 1;
-  border-bottom: 1px solid #3a3a3a;
+  flex: 0 0 60mm;
+  width: 60mm;
+  position: relative;
   padding-bottom: 2px;
+}
+
+.info-text {
+  position: relative;
+  z-index: 1;
+  text-decoration: none;
+}
+
+.info-rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-bottom: 1px solid #3a3a3a;
 }
 
 .info-table,
@@ -169,8 +193,9 @@ body {
 .grading-table th,
 .grading-table td {
   border: 1px solid #3a3a3a;
-  padding: 4px 6px;
+  padding: 6px 6px;
   vertical-align: middle;
+  line-height: 1.4;
 }
 
 .info-table th {

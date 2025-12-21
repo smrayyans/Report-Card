@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Diagnostics Batch</title>
+    <style>
+      {{ css_content }}
+    </style>
+  </head>
+  <body>
+    {% from "diagnostics_layout.html" import render_diagnostics %}
+    {% for record in records %}
+      {{ render_diagnostics(record, template_dir) }}
+    {% endfor %}
+  </body>
+</html>

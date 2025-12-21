@@ -601,6 +601,47 @@ textarea.input.dark:focus {
   overflow: hidden;
 }
 
+.diagnostics-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.diagnostics-section {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 14px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.diagnostics-section h4 {
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.diagnostics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px 18px;
+}
+
+.diagnostics-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.diagnostics-row span {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

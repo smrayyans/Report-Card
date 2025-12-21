@@ -15,6 +15,11 @@ const routeMeta = [
     subtitle: 'Craft cinematic report cards with live totals and PDF export.',
   },
   {
+    path: '/diagnostics',
+    title: 'Diagnostics Lab',
+    subtitle: 'Capture skill-by-skill diagnostics with quick ratings and comments.',
+  },
+  {
     path: '/settings',
     title: 'Control Center',
     subtitle: 'Configure sessions, subjects, and presets to match your academy.',

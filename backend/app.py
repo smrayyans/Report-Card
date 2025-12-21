@@ -1,8 +1,3 @@
-"""
-FastAPI backend for the Discord-inspired Report Card application.
-Provides authentication, student management, configuration, and PDF generation.
-"""
-
 from __future__ import annotations
 
 import json
@@ -79,6 +74,19 @@ class ReportRequest(BaseModel):
     grand_totals: Dict[str, Any]
 
 
+class DiagnosticsRequest(BaseModel):
+    student_name: str
+    father_name: str
+    class_sec: str
+    gr_no: str
+    attendance: str
+    attendance_out_of: str
+    overall_remark: str
+    term: str
+    comment: str
+    diagnostics_sections: list[Dict[str, Any]]
+
+
 class FiltersPayload(BaseModel):
     filters: Dict[str, list[str]]
 
@@ -140,12 +148,29 @@ def ensure_report_queue_table():
     conn.close()
 
 
+def ensure_diagnostics_queue_table():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS diagnostics_queue (
+            id SERIAL PRIMARY KEY,
+            payload JSONB NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+
 @app.on_event("startup")
 def initialize_report_queue():
     try:
         ensure_report_queue_table()
+        ensure_diagnostics_queue_table()
     except Exception as exc:  # pragma: no cover
-        print(f"Unable to prepare report queue table: {exc}")
+        print(f"Unable to prepare queue tables: {exc}")
 
 
 @app.get("/health")
@@ -716,6 +741,65 @@ def export_saved_reports():
             raise HTTPException(status_code=500, detail=message)
 
         cursor.execute("DELETE FROM report_queue")
+        conn.commit()
+
+        pdf_file = Path(pdf_path)
+        return {
+            "message": message,
+            "file": pdf_file.name,
+            "download_url": f"/reports/files/{pdf_file.name}",
+        }
+    finally:
+        conn.close()
+
+
+@app.post("/diagnostics/save")
+def save_diagnostics(payload: DiagnosticsRequest):
+    data = payload.dict()
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO diagnostics_queue (payload) VALUES (%s)", (json.dumps(data),))
+        cursor.execute("SELECT COUNT(*) AS count FROM diagnostics_queue")
+        count = cursor.fetchone()[0]
+        conn.commit()
+        return {"status": "ok", "count": count}
+    finally:
+        conn.close()
+
+
+@app.get("/diagnostics/queue")
+def diagnostics_queue():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) AS count FROM diagnostics_queue")
+    count = cursor.fetchone()[0]
+    conn.close()
+    return {"count": count}
+
+
+@app.post("/diagnostics/export")
+def export_saved_diagnostics():
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
+    try:
+        cursor.execute("SELECT id, payload FROM diagnostics_queue ORDER BY id")
+        rows = cursor.fetchall()
+        if not rows:
+            raise HTTPException(status_code=400, detail="No saved diagnostics available for export.")
+
+        records = [row["payload"] for row in rows]
+        filename = f"Faizan_Diagnostics_Batch_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        success, message, pdf_path = PDFManager.generate_pdf(
+            filename,
+            {"records": records},
+            template_name="report_diagnostics_batch.html",
+            css_name="diagnostics_styles.css",
+        )
+        if not success:
+            raise HTTPException(status_code=500, detail=message)
+
+        cursor.execute("DELETE FROM diagnostics_queue")
         conn.commit()
 
         pdf_file = Path(pdf_path)

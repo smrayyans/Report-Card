@@ -26,6 +26,22 @@ const navItems = [
     ),
   },
   {
+    to: '/diagnostics',
+    label: 'Diagnostics',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24">
+        <path
+          d="M4 5h16v14H4z"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+        <path d="M7 9h10M7 13h6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     to: '/settings',
     label: 'Settings',
     icon: (
