@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import SubjectSelectorModal from '../components/SubjectSelectorModal';
 import RemarksModal from '../components/RemarksModal';
+import DuplicateResultModal from '../components/DuplicateResultModal';
 import useReportStore from '../store/reportStore';
 import useToast from '../hooks/useToast';
 import api, { API_BASE } from '../services/api';
@@ -64,6 +65,7 @@ export default function ReportsPage() {
   const [subjectModal, setSubjectModal] = useState(false);
   const [remarksModal, setRemarksModal] = useState(false);
   const [pdfInfo, setPdfInfo] = useState(null);
+  const [duplicatePrompt, setDuplicatePrompt] = useState({ open: false, message: '', detail: null, payload: null });
 
   const config = useReportStore((state) => state.config);
   const filters = useReportStore((state) => state.filters);
@@ -73,9 +75,14 @@ export default function ReportsPage() {
   const saveFilters = useReportStore((state) => state.saveFilters);
   const saveRemarks = useReportStore((state) => state.saveRemarks);
   const queueCount = useReportStore((state) => state.queueCount);
+  const queueItems = useReportStore((state) => state.queueItems);
   const refreshQueueCount = useReportStore((state) => state.refreshQueueCount);
+  const refreshQueueItems = useReportStore((state) => state.refreshQueueItems);
   const saveReport = useReportStore((state) => state.saveReport);
+  const updateQueuedReport = useReportStore((state) => state.updateQueuedReport);
+  const clearQueue = useReportStore((state) => state.clearQueue);
   const exportReports = useReportStore((state) => state.exportReports);
+  const [editingQueueId, setEditingQueueId] = useState(null);
 
   useEffect(() => {
     fetchInitial().catch(() =>
@@ -91,7 +98,10 @@ export default function ReportsPage() {
     refreshQueueCount().catch(() => {
       console.warn('Unable to fetch report queue count.');
     });
-  }, [refreshQueueCount]);
+    refreshQueueItems().catch(() => {
+      console.warn('Unable to fetch report queue.');
+    });
+  }, [refreshQueueCount, refreshQueueItems]);
 
   useEffect(() => {
     if (config && !form.session) {
@@ -251,6 +261,52 @@ export default function ReportsPage() {
     return payload;
   };
 
+  const buildSubjectsFromPayload = (payload) => {
+    const marksData = payload?.marks_data || {};
+    const knownTypes = subjects.reduce((acc, subject) => {
+      acc[subject.subject_name] = subject.type;
+      return acc;
+    }, {});
+
+    return Object.entries(marksData).map(([name, details]) => {
+      const cwAbsent = String(details.coursework).toLowerCase() === 'absent';
+      const teAbsent = String(details.termexam).toLowerCase() === 'absent';
+      return {
+        name,
+        type: knownTypes[name] || 'Core',
+        coursework: cwAbsent ? '' : (details.coursework || ''),
+        termExam: teAbsent ? '' : (details.termexam || ''),
+        cwAbsent,
+        teAbsent,
+        maxMarks: (details.maxmarks || config?.default_max_marks || 100).toString(),
+      };
+    });
+  };
+
+  const loadQueuedReport = (item) => {
+    const payload = item.payload || {};
+    setEditingQueueId(item.id);
+    setForm({
+      term: payload.term || termOptions[0],
+      session: payload.session || config?.default_session || '',
+      grNo: payload.gr_no || '',
+      studentName: payload.student_name || '',
+      fatherName: payload.father_name || '',
+      classSec: payload.class_sec || '',
+      rank: payload.rank || 'N/A',
+      totalDays: Number(payload.total_days || 0),
+      daysAttended: Number(payload.days_attended || 0),
+      conduct: payload.conduct || conductOptions[0],
+      performance: payload.performance || performanceOptions[0],
+      progress: payload.progress || progressOptions[0],
+      status: payload.status || statusOptions[0],
+      remarks: payload.remarks || '',
+      date: payload.date ? dayjs(payload.date, 'DD MMMM YYYY').format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
+    });
+    setSelectedSubjects(buildSubjectsFromPayload(payload));
+    setPdfInfo(null);
+  };
+
   const handleSaveReport = async () => {
     if (!form.studentName.trim() || !form.classSec.trim()) {
       toast({ type: 'warning', title: 'Missing data', message: 'Enter student name and class before saving.' });
@@ -258,18 +314,85 @@ export default function ReportsPage() {
     }
     try {
       const payload = buildReportPayload();
-      const response = await saveReport(payload);
+      const response = editingQueueId
+        ? await updateQueuedReport(editingQueueId, payload)
+        : await saveReport(payload);
+      setEditingQueueId(null);
       resetForm();
+      refreshQueueItems().catch(() => {
+        console.warn('Unable to refresh report queue.');
+      });
       toast({
         type: 'success',
-        title: 'Saved',
+        title: editingQueueId ? 'Updated' : 'Saved',
         message: `Record stored. ${response.count ?? 0} report(s) ready for export.`,
       });
     } catch (error) {
+      const detail = error.response?.data?.detail;
+      if (error.response?.status === 409 && detail?.type) {
+        setDuplicatePrompt({
+          open: true,
+          message: detail.message || 'This result already exists for the selected term and session.',
+          detail,
+          payload: buildReportPayload(),
+        });
+        return;
+      }
       toast({
         type: 'error',
         title: 'Save failed',
         message: error.response?.data?.detail || 'Unable to store the report.',
+      });
+    }
+  };
+
+  const handleDuplicateOverwrite = async () => {
+    if (!duplicatePrompt.payload) return;
+    try {
+      const response = await saveReport(duplicatePrompt.payload, true);
+      setDuplicatePrompt({ open: false, message: '', detail: null, payload: null });
+      setEditingQueueId(null);
+      resetForm();
+      refreshQueueItems().catch(() => {
+        console.warn('Unable to refresh report queue.');
+      });
+      toast({
+        type: 'success',
+        title: 'Overwritten',
+        message: `Record updated. ${response.count ?? 0} report(s) ready for export.`,
+      });
+    } catch (overwriteError) {
+      toast({
+        type: 'error',
+        title: 'Overwrite failed',
+        message: overwriteError.response?.data?.detail || 'Unable to overwrite the report.',
+      });
+    }
+  };
+
+  const handleDuplicateView = async () => {
+    const detail = duplicatePrompt.detail;
+    if (!detail) return;
+    try {
+      if (detail.type === 'queue' && detail.queue_id) {
+        const response = await api.get(`/reports/queue/${detail.queue_id}/pdf`);
+        if (response.data?.file) {
+          toast({ type: 'success', title: 'Saved', message: `${response.data.file} saved to output folder.` });
+        }
+      } else if (detail.type === 'history' && detail.result_id) {
+        const response = await api.get(`/reports/history/${detail.result_id}/pdf`);
+        if (response.data?.file) {
+          toast({ type: 'success', title: 'Saved', message: `${response.data.file} saved to output folder.` });
+        }
+      } else {
+        return;
+      }
+      setDuplicatePrompt({ open: false, message: '', detail: null, payload: null });
+    } catch (downloadError) {
+      toast({
+        type: 'error',
+        title: 'View failed',
+        message: downloadError.response?.data?.detail || 'Unable to generate the PDF.',
       });
     }
   };
@@ -286,6 +409,9 @@ export default function ReportsPage() {
     try {
       const response = await exportReports();
       setPdfInfo(response);
+      refreshQueueItems().catch(() => {
+        console.warn('Unable to refresh report queue.');
+      });
       toast({
         type: 'success',
         title: 'Batch exported',
@@ -300,7 +426,23 @@ export default function ReportsPage() {
     }
   };
 
+  const handleClearQueue = async () => {
+    try {
+      await clearQueue();
+      setEditingQueueId(null);
+      resetForm();
+      toast({ type: 'success', title: 'Queue cleared', message: 'All queued reports removed.' });
+    } catch (error) {
+      toast({
+        type: 'error',
+        title: 'Clear failed',
+        message: error.response?.data?.detail || 'Unable to clear report queue.',
+      });
+    }
+  };
+
   const resetForm = () => {
+    setEditingQueueId(null);
     setForm({
       term: termOptions[0],
       session: config?.default_session || config?.sessions?.[0] || '',
@@ -597,7 +739,10 @@ export default function ReportsPage() {
               Reset
             </button>
             <button className="btn btn-secondary" type="button" onClick={handleSaveReport}>
-              Save
+              {editingQueueId ? 'Update' : 'Save'}
+            </button>
+            <button className="btn btn-danger" type="button" onClick={handleClearQueue} disabled={queueItems.length === 0}>
+              Clear Queue
             </button>
             <button
               className="btn btn-primary"
@@ -608,6 +753,29 @@ export default function ReportsPage() {
               {queueCount ? `Export(${queueCount})` : 'Export'}
             </button>
           </div>
+        </div>
+        <div className="queue-panel">
+          <div className="queue-header">
+            <span className="eyebrow">Queue</span>
+            <span className="muted">{queueItems.length} saved</span>
+          </div>
+          {queueItems.length ? (
+            <div className="queue-list">
+              {queueItems.map((item) => (
+                <button
+                  key={item.id}
+                  className={`queue-item${editingQueueId === item.id ? ' is-active' : ''}`}
+                  type="button"
+                  onClick={() => loadQueuedReport(item)}
+                >
+                  <span>{item.payload?.student_name || 'Unnamed Student'}</span>
+                  <span className="muted">{item.payload?.class_sec || ''}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="muted">No saved reports yet.</p>
+          )}
         </div>
       </div>
 
@@ -622,6 +790,13 @@ export default function ReportsPage() {
         onDeleteFilter={handleDeleteFilter}
       />
       <RemarksModal open={remarksModal} remarks={remarks} onInsert={handleInsertRemark} onSave={saveRemarks} onClose={() => setRemarksModal(false)} />
+      <DuplicateResultModal
+        open={duplicatePrompt.open}
+        message={duplicatePrompt.message}
+        onOverwrite={handleDuplicateOverwrite}
+        onView={handleDuplicateView}
+        onClose={() => setDuplicatePrompt({ open: false, message: '', detail: null, payload: null })}
+      />
     </div>
   );
 }

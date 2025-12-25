@@ -23,6 +23,7 @@ export default function SettingsPage() {
   const createSubject = useReportStore((state) => state.createSubject);
   const updateSubject = useReportStore((state) => state.updateSubject);
   const deleteSubject = useReportStore((state) => state.deleteSubject);
+  const clearResults = useReportStore((state) => state.clearResults);
   const [draft, setDraft] = useState(config);
   const [sessionsInput, setSessionsInput] = useState('');
   const [marksInput, setMarksInput] = useState('');
@@ -120,6 +121,23 @@ export default function SettingsPage() {
       toast({ type: 'success', title: 'Subject deleted', message: `${subjectName} removed successfully.` });
     } catch (error) {
       toast({ type: 'error', title: 'Failed to delete', message: error.response?.data?.detail || 'Could not delete subject.' });
+    }
+  };
+
+  const handleClearResults = async () => {
+    const confirmClear = window.confirm(
+      'This will permanently delete all saved report results. Continue?',
+    );
+    if (!confirmClear) return;
+    try {
+      await clearResults();
+      toast({ type: 'success', title: 'Cleared', message: 'All report results have been deleted.' });
+    } catch (error) {
+      toast({
+        type: 'error',
+        title: 'Clear failed',
+        message: error.response?.data?.detail || 'Could not clear the results table.',
+      });
     }
   };
 
@@ -364,6 +382,19 @@ export default function SettingsPage() {
             </div>
           </div>
         )}
+      </section>
+
+      <section className="panel glass-surface">
+        <header className="panel-header">
+          <div>
+            <p className="eyebrow">Danger Zone</p>
+            <h3>Clear Results Table</h3>
+          </div>
+          <button className="btn btn-danger" onClick={handleClearResults}>
+            Delete All Results
+          </button>
+        </header>
+        <p className="muted">Testing only. This deletes all saved report results in the database.</p>
       </section>
     </div>
   );

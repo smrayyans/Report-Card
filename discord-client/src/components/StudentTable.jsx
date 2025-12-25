@@ -18,7 +18,7 @@ const rowVariants = {
   exit: { opacity: 0, y: -8 },
 };
 
-function StudentRow({ student, onSelect, isSelected }) {
+function StudentRow({ student, onSelect, isSelected, onCopyGrNo }) {
   return (
     <motion.div
       variants={rowVariants}
@@ -28,7 +28,18 @@ function StudentRow({ student, onSelect, isSelected }) {
       className={`student-row ${isSelected ? 'is-selected' : ''}`}
       onClick={() => onSelect(student)}
     >
-      <div>{student.gr_no}</div>
+      <div>
+        <button
+          type="button"
+          className="gr-copy"
+          onClick={(event) => {
+            event.stopPropagation();
+            onCopyGrNo?.(student.gr_no);
+          }}
+        >
+          {student.gr_no}
+        </button>
+      </div>
       <div>
         <strong>{student.student_name}</strong>
       </div>
@@ -44,7 +55,7 @@ function StudentRow({ student, onSelect, isSelected }) {
   );
 }
 
-const StudentTable = memo(function StudentTable({ students, loading, onSelect, selected }) {
+const StudentTable = memo(function StudentTable({ students, loading, onSelect, selected, onCopyGrNo }) {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
   const handleSort = (key) => {
@@ -97,6 +108,7 @@ const StudentTable = memo(function StudentTable({ students, loading, onSelect, s
                 student={student}
                 onSelect={onSelect}
                 isSelected={selected?.gr_no === student.gr_no}
+                onCopyGrNo={onCopyGrNo}
               />
             ))}
           </AnimatePresence>

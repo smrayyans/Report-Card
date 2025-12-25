@@ -11,8 +11,13 @@ const routeMeta = [
   },
   {
     path: '/reports',
-    title: 'Report Studio',
+    title: 'Report Card Studio',
     subtitle: 'Craft cinematic report cards with live totals and PDF export.',
+  },
+  {
+    path: '/results',
+    title: 'Results Vault',
+    subtitle: 'Browse every saved report by session, class, and term.',
   },
   {
     path: '/diagnostics',

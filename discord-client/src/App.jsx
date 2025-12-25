@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import StudentsPage from './pages/StudentsPage';
 import ReportsPage from './pages/ReportsPage';
 import DiagnosticsPage from './pages/DiagnosticsPage';
+import ResultsPage from './pages/ResultsPage';
 import SettingsPage from './pages/SettingsPage';
 import useAuthStore from './store/authStore';
 import './styles/global.css';
@@ -34,6 +35,7 @@ function App() {
           <Route path="/" element={<Navigate to="/students" replace />} />
           <Route path="/students" element={<StudentsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/results" element={<ResultsPage />} />
           <Route path="/diagnostics" element={<DiagnosticsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>

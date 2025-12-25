@@ -9,6 +9,8 @@ const useStudentStore = create((set, get) => ({
   detail: null,
   detailLoading: false,
   importLoading: false,
+  history: [],
+  historyLoading: false,
   totalStudents: 0,
   currentOffset: 0,
   hasMore: false,
@@ -48,7 +50,17 @@ const useStudentStore = create((set, get) => ({
       const response = await api.get('/students', { params });
       const { students: newStudents, total, offset } = response.data;
       set((state) => ({
-        students: [...state.students, ...newStudents],
+        students: (() => {
+          const seen = new Set(state.students.map((student) => student.gr_no));
+          const merged = [...state.students];
+          newStudents.forEach((student) => {
+            if (!seen.has(student.gr_no)) {
+              seen.add(student.gr_no);
+              merged.push(student);
+            }
+          });
+          return merged;
+        })(),
         totalStudents: total,
         currentOffset: offset + newStudents.length,
         hasMore: offset + newStudents.length < total,
@@ -87,6 +99,23 @@ const useStudentStore = create((set, get) => ({
       set({ detailLoading: false });
       throw error;
     }
+  },
+  fetchReportHistory: async (grNo) => {
+    if (!grNo) return [];
+    set({ historyLoading: true });
+    try {
+      const response = await api.get(`/reports/history/${encodeURIComponent(grNo)}`);
+      set({ history: response.data.items || [], historyLoading: false });
+      return response.data.items || [];
+    } catch (error) {
+      set({ historyLoading: false });
+      throw error;
+    }
+  },
+  downloadReportHistoryPdf: async (resultId) => {
+    if (!resultId) return null;
+    const response = await api.get(`/reports/history/${resultId}/pdf`);
+    return response.data;
   },
   clearDetail: () => set({ detail: null }),
   importStudents: async (file) => {

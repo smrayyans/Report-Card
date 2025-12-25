@@ -151,6 +151,27 @@ def ensure_report_queue_table():
     conn.close()
 
 
+def ensure_report_results_table():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS report_results (
+            id SERIAL PRIMARY KEY,
+            gr_no TEXT,
+            student_name TEXT,
+            class_sec TEXT,
+            session TEXT,
+            term TEXT,
+            payload JSONB NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+
 def ensure_diagnostics_queue_table():
     conn = get_connection()
     cursor = conn.cursor()
@@ -171,7 +192,14 @@ def ensure_diagnostics_queue_table():
 def initialize_report_queue():
     try:
         ensure_report_queue_table()
+        ensure_report_results_table()
         ensure_diagnostics_queue_table()
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM report_queue")
+        cursor.execute("DELETE FROM diagnostics_queue")
+        conn.commit()
+        conn.close()
     except Exception as exc:  # pragma: no cover
         print(f"Unable to prepare queue tables: {exc}")
 
@@ -226,9 +254,14 @@ def list_students(
     if search:
         like = f"%{search}%"
         clauses.append(
-            "(student_name ILIKE %s OR father_name ILIKE %s OR gr_no ILIKE %s OR current_class_sec ILIKE %s)"
+            "("
+            "student_name ILIKE %s OR father_name ILIKE %s OR gr_no ILIKE %s OR current_class_sec ILIKE %s OR "
+            "contact_number_resident ILIKE %s OR contact_number_neighbour ILIKE %s OR "
+            "contact_number_relative ILIKE %s OR contact_number_other1 ILIKE %s OR "
+            "contact_number_other2 ILIKE %s OR contact_number_other3 ILIKE %s OR contact_number_other4 ILIKE %s"
+            ")"
         )
-        params.extend([like, like, like, like])
+        params.extend([like] * 11)
     if class_sec and class_sec.lower() != "all":
         clauses.append("current_class_sec = %s")
         params.append(class_sec)
@@ -699,14 +732,90 @@ def save_remarks(payload: RemarksPayload):
 
 
 @app.post("/reports/save")
-def save_report(payload: ReportRequest):
+def save_report(payload: ReportRequest, overwrite: bool = False):
     data = payload.dict(by_alias=True)
+    gr_no = data.get("gr_no")
+    session = data.get("session")
+    term = data.get("term")
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
     try:
-        cursor.execute("INSERT INTO report_queue (payload) VALUES (%s)", (json.dumps(data),))
+        cursor.execute(
+            """
+            SELECT id, payload FROM report_results
+            WHERE gr_no = %s AND session = %s AND term = %s
+            ORDER BY created_at DESC
+            LIMIT 1
+            """,
+            (gr_no, session, term),
+        )
+        history_row = cursor.fetchone()
+
+        cursor.execute(
+            """
+            SELECT id, payload FROM report_queue
+            WHERE (payload->>'gr_no') = %s AND (payload->>'session') = %s AND (payload->>'term') = %s
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (gr_no, session, term),
+        )
+        queue_row = cursor.fetchone()
+
+        if history_row and not overwrite:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "message": f"{term} result for session {session} already exists for this student.",
+                    "type": "history",
+                    "result_id": history_row["id"],
+                },
+            )
+        if queue_row and not overwrite:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "message": f"{term} result for session {session} is already saved in the queue.",
+                    "type": "queue",
+                    "queue_id": queue_row["id"],
+                    "payload": queue_row["payload"],
+                },
+            )
+
+        if overwrite and history_row:
+            cursor.execute(
+                """
+                UPDATE report_results
+                SET payload = %s, student_name = %s, class_sec = %s, session = %s, term = %s, gr_no = %s
+                WHERE id = %s
+                """,
+                (
+                    json.dumps(data),
+                    data.get("student_name"),
+                    data.get("class_sec"),
+                    session,
+                    term,
+                    gr_no,
+                    history_row["id"],
+                ),
+            )
+            if queue_row:
+                cursor.execute(
+                    "UPDATE report_queue SET payload = %s WHERE id = %s",
+                    (json.dumps(data), queue_row["id"]),
+                )
+            else:
+                cursor.execute("INSERT INTO report_queue (payload) VALUES (%s)", (json.dumps(data),))
+        elif overwrite and queue_row:
+            cursor.execute(
+                "UPDATE report_queue SET payload = %s WHERE id = %s",
+                (json.dumps(data), queue_row["id"]),
+            )
+        else:
+            cursor.execute("INSERT INTO report_queue (payload) VALUES (%s)", (json.dumps(data),))
+
         cursor.execute("SELECT COUNT(*) AS count FROM report_queue")
-        count = cursor.fetchone()[0]
+        count = cursor.fetchone()["count"]
         conn.commit()
         return {"status": "ok", "count": count}
     finally:
@@ -721,6 +830,221 @@ def report_queue():
     count = cursor.fetchone()[0]
     conn.close()
     return {"count": count}
+
+
+@app.get("/reports/queue/items")
+def report_queue_items():
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
+    cursor.execute("SELECT id, payload FROM report_queue ORDER BY id")
+    rows = cursor.fetchall()
+    conn.close()
+    return {"items": [row_to_dict(row) for row in rows]}
+
+
+@app.delete("/reports/queue")
+def clear_report_queue():
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM report_queue")
+        conn.commit()
+        return {"status": "ok", "count": 0}
+    finally:
+        conn.close()
+
+
+@app.put("/reports/queue/{queue_id}")
+def update_report_queue(queue_id: int, payload: ReportRequest):
+    data = payload.dict(by_alias=True)
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE report_queue SET payload = %s WHERE id = %s", (json.dumps(data), queue_id))
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Queued report not found")
+        cursor.execute("SELECT COUNT(*) AS count FROM report_queue")
+        count = cursor.fetchone()[0]
+        conn.commit()
+        return {"status": "ok", "count": count}
+    finally:
+        conn.close()
+
+
+@app.get("/reports/queue/{queue_id}/pdf")
+def report_queue_pdf(queue_id: int):
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
+    try:
+        cursor.execute("SELECT payload FROM report_queue WHERE id = %s", (queue_id,))
+        row = cursor.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Queued report not found")
+        payload = row["payload"]
+        safe_name = str(payload.get("student_name", "student")).replace(" ", "_")
+        session = payload.get("session", "session")
+        filename = f"{safe_name}_Report_{session}_queue_{queue_id}"
+        success, message, pdf_path = PDFManager.generate_pdf(
+            filename,
+            payload,
+            template_name="report_card.html",
+        )
+        if not success:
+            raise HTTPException(status_code=500, detail=message)
+        pdf_file = Path(pdf_path)
+        return {
+            "message": message,
+            "file": pdf_file.name,
+            "download_url": f"/reports/files/{pdf_file.name}",
+        }
+    finally:
+        conn.close()
+
+
+@app.get("/reports/history/{gr_no}")
+def report_history(gr_no: str):
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
+    cursor.execute(
+        """
+        SELECT id, gr_no, student_name, class_sec, session, term, created_at, payload
+        FROM report_results
+        WHERE gr_no = %s
+        ORDER BY created_at DESC
+        """,
+        (gr_no,),
+    )
+    rows = cursor.fetchall()
+    conn.close()
+    items = []
+    for row in rows:
+        payload = row.get("payload") or {}
+        items.append(
+            {
+                "id": row["id"],
+                "gr_no": row.get("gr_no"),
+                "student_name": row.get("student_name"),
+                "class_sec": row.get("class_sec"),
+                "session": row.get("session"),
+                "term": row.get("term"),
+                "date": payload.get("date"),
+                "created_at": row.get("created_at"),
+            }
+        )
+    return {"items": items}
+
+
+@app.get("/reports/history")
+def report_history_all():
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
+    cursor.execute(
+        """
+        SELECT id, gr_no, student_name, class_sec, session, term, created_at, payload
+        FROM report_results
+        ORDER BY session DESC, class_sec ASC, term ASC, created_at DESC
+        """
+    )
+    rows = cursor.fetchall()
+    conn.close()
+    items = []
+    for row in rows:
+        payload = row.get("payload") or {}
+        items.append(
+            {
+                "id": row["id"],
+                "gr_no": row.get("gr_no"),
+                "student_name": row.get("student_name"),
+                "class_sec": row.get("class_sec"),
+                "session": row.get("session"),
+                "term": row.get("term"),
+                "date": payload.get("date"),
+                "created_at": row.get("created_at"),
+            }
+        )
+    return {"items": items}
+
+
+@app.get("/reports/history-term")
+def report_history_batch(session: str, class_sec: str, term: str):
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
+    try:
+        cursor.execute(
+            """
+            SELECT payload FROM report_results
+            WHERE session = %s AND class_sec = %s AND term = %s
+            ORDER BY created_at DESC
+            """,
+            (session, class_sec, term),
+        )
+        rows = cursor.fetchall()
+        if not rows:
+            raise HTTPException(status_code=404, detail="No results found for the selected term.")
+
+        records = [row["payload"] for row in rows]
+        safe_session = session.replace(" ", "_")
+        safe_class = class_sec.replace(" ", "_")
+        safe_term = term.replace(" ", "_")
+        filename = f"Results_{safe_session}_{safe_class}_{safe_term}"
+        success, message, pdf_path = PDFManager.generate_pdf(
+            filename,
+            {"records": records},
+            template_name="report_batch.html",
+        )
+        if not success:
+            raise HTTPException(status_code=500, detail=message)
+
+        pdf_file = Path(pdf_path)
+        return {
+            "message": message,
+            "file": pdf_file.name,
+            "download_url": f"/reports/files/{pdf_file.name}",
+        }
+    finally:
+        conn.close()
+
+
+@app.get("/reports/history/{result_id}/pdf")
+def report_history_pdf(result_id: int):
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
+    try:
+        cursor.execute("SELECT payload FROM report_results WHERE id = %s", (result_id,))
+        row = cursor.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Result not found")
+        payload = row["payload"]
+        safe_name = str(payload.get("student_name", "student")).replace(" ", "_")
+        session = payload.get("session", "session")
+        filename = f"{safe_name}_Report_{session}_{result_id}"
+        success, message, pdf_path = PDFManager.generate_pdf(
+            filename,
+            payload,
+            template_name="report_card.html",
+        )
+        if not success:
+            raise HTTPException(status_code=500, detail=message)
+        pdf_file = Path(pdf_path)
+        return {
+            "message": message,
+            "file": pdf_file.name,
+            "download_url": f"/reports/files/{pdf_file.name}",
+        }
+    finally:
+        conn.close()
+
+
+@app.delete("/reports/results")
+def clear_report_results():
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM report_results")
+        conn.commit()
+        return {"status": "ok", "count": 0}
+    finally:
+        conn.close()
 
 
 @app.post("/reports/export")
@@ -742,6 +1066,25 @@ def export_saved_reports():
         )
         if not success:
             raise HTTPException(status_code=500, detail=message)
+
+        insert_rows = [
+            (
+                record.get("gr_no"),
+                record.get("student_name"),
+                record.get("class_sec"),
+                record.get("session"),
+                record.get("term"),
+                json.dumps(record),
+            )
+            for record in records
+        ]
+        cursor.executemany(
+            """
+            INSERT INTO report_results (gr_no, student_name, class_sec, session, term, payload)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            insert_rows,
+        )
 
         cursor.execute("DELETE FROM report_queue")
         conn.commit()
@@ -779,6 +1122,45 @@ def diagnostics_queue():
     count = cursor.fetchone()[0]
     conn.close()
     return {"count": count}
+
+
+@app.get("/diagnostics/queue/items")
+def diagnostics_queue_items():
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
+    cursor.execute("SELECT id, payload FROM diagnostics_queue ORDER BY id")
+    rows = cursor.fetchall()
+    conn.close()
+    return {"items": [row_to_dict(row) for row in rows]}
+
+
+@app.delete("/diagnostics/queue")
+def clear_diagnostics_queue():
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM diagnostics_queue")
+        conn.commit()
+        return {"status": "ok", "count": 0}
+    finally:
+        conn.close()
+
+
+@app.put("/diagnostics/queue/{queue_id}")
+def update_diagnostics_queue(queue_id: int, payload: DiagnosticsRequest):
+    data = payload.dict()
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE diagnostics_queue SET payload = %s WHERE id = %s", (json.dumps(data), queue_id))
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Queued diagnostics not found")
+        cursor.execute("SELECT COUNT(*) AS count FROM diagnostics_queue")
+        count = cursor.fetchone()[0]
+        conn.commit()
+        return {"status": "ok", "count": count}
+    finally:
+        conn.close()
 
 
 @app.post("/diagnostics/export")

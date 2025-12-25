@@ -24,10 +24,14 @@ export default function StudentsPage() {
   const loading = useStudentStore((state) => state.loading);
   const detail = useStudentStore((state) => state.detail);
   const detailLoading = useStudentStore((state) => state.detailLoading);
+  const history = useStudentStore((state) => state.history);
+  const historyLoading = useStudentStore((state) => state.historyLoading);
   const fetchStudents = useStudentStore((state) => state.fetchStudents);
   const fetchStats = useStudentStore((state) => state.fetchStats);
   const fetchClasses = useStudentStore((state) => state.fetchClasses);
   const fetchStudentDetail = useStudentStore((state) => state.fetchStudentDetail);
+  const fetchReportHistory = useStudentStore((state) => state.fetchReportHistory);
+  const downloadReportHistoryPdf = useStudentStore((state) => state.downloadReportHistoryPdf);
   const importStudents = useStudentStore((state) => state.importStudents);
   const importLoading = useStudentStore((state) => state.importLoading);
   const clearDetail = useStudentStore((state) => state.clearDetail);
@@ -66,6 +70,7 @@ export default function StudentsPage() {
     setSelected(student);
     try {
       await fetchStudentDetail(student.gr_no);
+      await fetchReportHistory(student.gr_no);
       setDrawerOpen(true);
     } catch (error) {
       toast({ type: 'error', title: 'Student lookup failed', message: error.response?.data?.detail || 'Unknown error' });
@@ -122,6 +127,21 @@ export default function StudentsPage() {
   const closeDrawer = () => {
     setDrawerOpen(false);
     clearDetail();
+  };
+
+  const handleDownloadHistory = async (resultId) => {
+    try {
+      const response = await downloadReportHistoryPdf(resultId);
+      if (response?.file) {
+        toast({ type: 'success', title: 'Saved', message: `${response.file} saved to output folder.` });
+      }
+    } catch (error) {
+      toast({
+        type: 'error',
+        title: 'Download failed',
+        message: error.response?.data?.detail || 'Unable to generate PDF.',
+      });
+    }
   };
 
   const handleSaveStudent = async (updates) => {
@@ -191,6 +211,16 @@ export default function StudentsPage() {
         title: 'Failed to load more',
         message: 'Could not fetch additional students.',
       });
+    }
+  };
+
+  const handleCopyGrNo = async (grNo) => {
+    if (!grNo) return;
+    try {
+      await navigator.clipboard.writeText(grNo);
+      toast({ type: 'success', title: 'Copied', message: `G.R No ${grNo} copied.` });
+    } catch (error) {
+      toast({ type: 'error', title: 'Copy failed', message: 'Could not copy G.R No.' });
     }
   };
 
@@ -291,7 +321,13 @@ export default function StudentsPage() {
             View Student
           </button>
         </div>
-        <StudentTable students={students} loading={loading} onSelect={handleSelect} selected={selected} />
+        <StudentTable
+          students={students}
+          loading={loading}
+          onSelect={handleSelect}
+          selected={selected}
+          onCopyGrNo={handleCopyGrNo}
+        />
 
         {hasMore && (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0' }}>
@@ -310,6 +346,9 @@ export default function StudentsPage() {
         open={drawerOpen}
         detail={detail}
         loading={detailLoading}
+        history={history}
+        historyLoading={historyLoading}
+        onDownloadHistory={handleDownloadHistory}
         onClose={closeDrawer}
         onDetailedView={openDetailModal}
       />

@@ -8,6 +8,7 @@ const useReportStore = create((set, get) => ({
   subjects: [],
   loading: false,
   queueCount: 0,
+  queueItems: [],
   async fetchInitial() {
     if (get().loading) return;
     set({ loading: true });
@@ -35,6 +36,10 @@ const useReportStore = create((set, get) => ({
   async refreshQueueCount() {
     const response = await api.get('/reports/queue');
     set({ queueCount: response.data.count || 0 });
+  },
+  async refreshQueueItems() {
+    const response = await api.get('/reports/queue/items');
+    set({ queueItems: response.data.items || [] });
   },
   async saveFilters(nextFilters) {
     await api.put('/filters', { filters: nextFilters });
@@ -67,9 +72,23 @@ const useReportStore = create((set, get) => ({
     await api.delete(`/subjects/${encodeURIComponent(subjectName)}`);
     set((state) => ({ subjects: state.subjects.filter((s) => s.subject_name !== subjectName) }));
   },
-  async saveReport(payload) {
-    const response = await api.post('/reports/save', payload);
+  async saveReport(payload, overwrite = false) {
+    const response = await api.post('/reports/save', payload, overwrite ? { params: { overwrite: true } } : undefined);
     set({ queueCount: response.data.count || 0 });
+    return response.data;
+  },
+  async updateQueuedReport(queueId, payload) {
+    const response = await api.put(`/reports/queue/${queueId}`, payload);
+    set({ queueCount: response.data.count || 0 });
+    return response.data;
+  },
+  async clearQueue() {
+    const response = await api.delete('/reports/queue');
+    set({ queueCount: response.data.count || 0, queueItems: [] });
+    return response.data;
+  },
+  async clearResults() {
+    const response = await api.delete('/reports/results');
     return response.data;
   },
   async exportReports() {

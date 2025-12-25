@@ -7,21 +7,26 @@ const navItems = [
     to: '/students',
     label: 'Students',
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <path
-          d="M12 12c2.761 0 5-2.239 5-5S14.761 2 12 2 7 4.239 7 7s2.239 5 5 5zm0 2c-3.309 0-10 1.654-10 5v1h20v-1c0-3.346-6.691-5-10-5z"
-          fill="currentColor"
+          d="M4 18.5c0-2.485 3.134-4.5 7-4.5s7 2.015 7 4.5"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
         />
+        <circle cx="11" cy="7.5" r="3.5" stroke="currentColor" strokeWidth="2" />
+        <path d="M19 9l2 2-2 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
   {
     to: '/reports',
-    label: 'Reports',
+    label: 'Report Card',
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24">
-        <path d="M6 2h9l5 5v15H6z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-        <path d="M14 2v6h6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M7 3h7l5 5v13H7z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M14 3v6h6" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M10 12h6M10 16h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </svg>
     ),
   },
@@ -29,15 +34,21 @@ const navItems = [
     to: '/diagnostics',
     label: 'Diagnostics',
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24">
-        <path
-          d="M4 5h16v14H4z"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinejoin="round"
-        />
-        <path d="M7 9h10M7 13h6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M4 6h16v12H4z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M7 10h4M7 14h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M16 9l2 2-2 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    to: '/results',
+    label: 'Results',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M5 4h9l5 5v11H5z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M14 4v5h5" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M8 12h8M8 16h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </svg>
     ),
   },

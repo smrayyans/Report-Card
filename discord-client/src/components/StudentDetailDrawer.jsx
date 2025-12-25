@@ -13,7 +13,16 @@ const backdropVariants = {
   exit: { opacity: 0 },
 };
 
-export default function StudentDetailDrawer({ open, detail, loading, onClose, onDetailedView }) {
+export default function StudentDetailDrawer({
+  open,
+  detail,
+  loading,
+  history,
+  historyLoading,
+  onDownloadHistory,
+  onClose,
+  onDetailedView,
+}) {
   useEffect(() => {
     if (open) {
       // Prevent body scrolling when drawer is open
@@ -125,6 +134,30 @@ export default function StudentDetailDrawer({ open, detail, loading, onClose, on
                         <p className="muted">No contacts on record.</p>
                       )}
                     </div>
+                  </div>
+
+                  <div className="drawer-section">
+                    <h4>Past Results</h4>
+                    {historyLoading ? (
+                      <p className="muted">Loading results...</p>
+                    ) : history?.length ? (
+                      <div className="result-history">
+                        {history.map((item) => (
+                          <div key={item.id} className="result-history-row">
+                            <div>
+                              <strong>{item.term || 'Term'}</strong>
+                              <p className="muted">{item.session || ''}</p>
+                              {item.date && <p className="muted">{item.date}</p>}
+                            </div>
+                            <button className="btn btn-text" onClick={() => onDownloadHistory?.(item.id)}>
+                              Download PDF
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="muted">No results saved yet.</p>
+                    )}
                   </div>
 
                   <div className="drawer-actions">

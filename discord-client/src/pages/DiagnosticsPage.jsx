@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import useToast from '../hooks/useToast';
 import api, { API_BASE } from '../services/api';
+import RemarksModal from '../components/RemarksModal';
 import useDiagnosticsStore from '../store/diagnosticsStore';
+import useReportStore from '../store/reportStore';
 
 const ratingOptions = ['Excellent', 'Very Good', 'Good', 'Fair'];
 const rankOptions = ['N/A', ...Array.from({ length: 10 }, (_, idx) => `${idx + 1}`)];
@@ -64,9 +66,18 @@ const buildRatingState = () =>
 export default function DiagnosticsPage() {
   const toast = useToast();
   const queueCount = useDiagnosticsStore((state) => state.queueCount);
+  const queueItems = useDiagnosticsStore((state) => state.queueItems);
   const refreshQueueCount = useDiagnosticsStore((state) => state.refreshQueueCount);
+  const refreshQueueItems = useDiagnosticsStore((state) => state.refreshQueueItems);
   const saveDiagnostics = useDiagnosticsStore((state) => state.saveDiagnostics);
+  const updateQueuedDiagnostics = useDiagnosticsStore((state) => state.updateQueuedDiagnostics);
+  const clearQueue = useDiagnosticsStore((state) => state.clearQueue);
   const exportDiagnostics = useDiagnosticsStore((state) => state.exportDiagnostics);
+  const remarks = useReportStore((state) => state.remarks);
+  const saveRemarks = useReportStore((state) => state.saveRemarks);
+  const fetchInitial = useReportStore((state) => state.fetchInitial);
+  const [editingQueueId, setEditingQueueId] = useState(null);
+  const [remarksModal, setRemarksModal] = useState(false);
   const [form, setForm] = useState({
     term: 'Diagnostics',
     grNo: '',
@@ -91,7 +102,20 @@ export default function DiagnosticsPage() {
     refreshQueueCount().catch(() => {
       console.warn('Unable to fetch diagnostics queue count.');
     });
-  }, [refreshQueueCount]);
+    refreshQueueItems().catch(() => {
+      console.warn('Unable to fetch diagnostics queue.');
+    });
+  }, [refreshQueueCount, refreshQueueItems]);
+
+  useEffect(() => {
+    fetchInitial().catch(() =>
+      toast({
+        type: 'error',
+        title: 'Backend unreachable',
+        message: 'Start the FastAPI server before building diagnostics.',
+      }),
+    );
+  }, [fetchInitial, toast]);
 
   const fetchStudentProfile = async () => {
     if (!canAutoFill) return;
@@ -138,7 +162,44 @@ export default function DiagnosticsPage() {
     })),
   });
 
+  const handleInsertRemark = (text) => {
+    setForm((prev) => ({
+      ...prev,
+      comment: prev.comment ? `${prev.comment}\n${text}` : text,
+    }));
+  };
+
+  const loadQueuedDiagnostics = (item) => {
+    const payload = item.payload || {};
+    setEditingQueueId(item.id);
+    setForm({
+      term: payload.term || 'Diagnostics',
+      grNo: payload.gr_no || '',
+      studentName: payload.student_name || '',
+      fatherName: payload.father_name || '',
+      classSec: payload.class_sec || '',
+      rank: payload.rank || rankOptions[0],
+      totalDays: payload.total_days || '',
+      daysAttended: payload.days_attended || '',
+      attendanceDates: payload.attendance_dates || '',
+      overallRemark: payload.overall_remark || '',
+      comment: payload.comment || '',
+    });
+
+    const nextRatings = buildRatingState();
+    (payload.diagnostics_sections || []).forEach((section) => {
+      (section.rows || []).forEach((row) => {
+        if (row.label) {
+          nextRatings[row.label] = row.value || ratingOptions[0];
+        }
+      });
+    });
+    setRatings(nextRatings);
+    setPdfInfo(null);
+  };
+
   const resetForm = () => {
+    setEditingQueueId(null);
     setForm({
       term: 'Diagnostics',
       grNo: '',
@@ -163,11 +224,18 @@ export default function DiagnosticsPage() {
       return;
     }
     try {
-      const response = await saveDiagnostics(buildDiagnosticsPayload());
+      const payload = buildDiagnosticsPayload();
+      const response = editingQueueId
+        ? await updateQueuedDiagnostics(editingQueueId, payload)
+        : await saveDiagnostics(payload);
+      setEditingQueueId(null);
       resetForm();
+      refreshQueueItems().catch(() => {
+        console.warn('Unable to refresh diagnostics queue.');
+      });
       toast({
         type: 'success',
-        title: 'Saved',
+        title: editingQueueId ? 'Updated' : 'Saved',
         message: `Diagnostics form queued. ${response.count ?? 0} record(s) ready for export.`,
       });
     } catch (error) {
@@ -187,12 +255,30 @@ export default function DiagnosticsPage() {
     try {
       const response = await exportDiagnostics();
       setPdfInfo(response);
+      refreshQueueItems().catch(() => {
+        console.warn('Unable to refresh diagnostics queue.');
+      });
       toast({ type: 'success', title: 'Batch exported', message: 'Diagnostics PDF generated successfully.' });
     } catch (error) {
       toast({
         type: 'error',
         title: 'Export failed',
         message: error.response?.data?.detail || 'Unable to export diagnostics.',
+      });
+    }
+  };
+
+  const handleClearQueue = async () => {
+    try {
+      await clearQueue();
+      setEditingQueueId(null);
+      resetForm();
+      toast({ type: 'success', title: 'Queue cleared', message: 'All queued diagnostics removed.' });
+    } catch (error) {
+      toast({
+        type: 'error',
+        title: 'Clear failed',
+        message: error.response?.data?.detail || 'Unable to clear diagnostics queue.',
       });
     }
   };
@@ -305,6 +391,9 @@ export default function DiagnosticsPage() {
             value={form.comment}
             onChange={(event) => setForm((prev) => ({ ...prev, comment: event.target.value }))}
           />
+          <button className="btn btn-secondary" type="button" onClick={() => setRemarksModal(true)}>
+            Presets
+          </button>
         </div>
       </div>
 
@@ -351,14 +440,41 @@ export default function DiagnosticsPage() {
               Reset
             </button>
             <button className="btn btn-secondary" type="button" onClick={handleSave}>
-              Save
+              {editingQueueId ? 'Update' : 'Save'}
+            </button>
+            <button className="btn btn-danger" type="button" onClick={handleClearQueue} disabled={queueItems.length === 0}>
+              Clear Queue
             </button>
             <button className="btn btn-primary" type="button" onClick={handleExport} disabled={queueCount === 0}>
               {queueCount ? `Export(${queueCount})` : 'Export'}
             </button>
           </div>
         </div>
+        <div className="queue-panel">
+          <div className="queue-header">
+            <span className="eyebrow">Queue</span>
+            <span className="muted">{queueItems.length} saved</span>
+          </div>
+          {queueItems.length ? (
+            <div className="queue-list">
+              {queueItems.map((item) => (
+                <button
+                  key={item.id}
+                  className={`queue-item${editingQueueId === item.id ? ' is-active' : ''}`}
+                  type="button"
+                  onClick={() => loadQueuedDiagnostics(item)}
+                >
+                  <span>{item.payload?.student_name || 'Unnamed Student'}</span>
+                  <span className="muted">{item.payload?.class_sec || ''}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="muted">No saved diagnostics yet.</p>
+          )}
+        </div>
       </div>
+      <RemarksModal open={remarksModal} remarks={remarks} onInsert={handleInsertRemark} onSave={saveRemarks} onClose={() => setRemarksModal(false)} />
     </div>
   );
 }
