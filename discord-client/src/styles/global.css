@@ -994,6 +994,14 @@ textarea {
   min-width: 260px;
 }
 
+.toast-item.toast-clickable {
+  cursor: pointer;
+}
+
+.toast-item.toast-clickable:hover {
+  box-shadow: 0 0 0 1px rgba(88, 101, 242, 0.35);
+}
+
 .toast-indicator {
   width: 4px;
   align-self: stretch;

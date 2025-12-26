@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
@@ -17,6 +17,10 @@ const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const PYTHON_ENTRY = path.join(ROOT_DIR, 'backend', 'app.py');
 const BACKEND_EXE = path.join(process.resourcesPath, 'backend', 'report-backend.exe');
 const SHOULD_START_BACKEND = process.env.FAIZAN_START_BACKEND !== '0';
+
+const getOutputDir = () => {
+  return app.isPackaged ? path.join(process.resourcesPath, 'output') : path.join(ROOT_DIR, 'output');
+};
 
 function startPythonServer() {
   if (!SHOULD_START_BACKEND) return;
@@ -158,6 +162,12 @@ ipcMain.handle('update-check', () => {
 
 ipcMain.handle('update-install', () => {
   autoUpdater.quitAndInstall();
+});
+
+ipcMain.handle('open-output-folder', async () => {
+  const outputDir = getOutputDir();
+  fs.mkdirSync(outputDir, { recursive: true });
+  return shell.openPath(outputDir);
 });
 
 app.whenReady().then(() => {

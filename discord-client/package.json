@@ -87,9 +87,9 @@
           ]
         }
       ],
-      "icon": "build/icon.ico",
-      "signAndEditExecutable": false
+      "icon": "build/icon.ico"
     },
+    "artifactName": "Faizan-Report-Studio-Setup-${version}.${ext}",
     "publish": [
       {
         "provider": "github",

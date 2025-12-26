@@ -258,7 +258,12 @@ export default function DiagnosticsPage() {
       refreshQueueItems().catch(() => {
         console.warn('Unable to refresh diagnostics queue.');
       });
-      toast({ type: 'success', title: 'Batch exported', message: 'Diagnostics PDF generated successfully.' });
+      toast({
+        type: 'success',
+        title: 'Batch exported',
+        message: 'Diagnostics PDF generated successfully.',
+        openOutput: true,
+      });
     } catch (error) {
       toast({
         type: 'error',

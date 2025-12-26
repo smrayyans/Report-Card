@@ -2,9 +2,9 @@ import { create } from 'zustand';
 
 const useToastStore = create((set, get) => ({
   toasts: [],
-  pushToast: ({ title, message, type = 'info', duration = 4000 }) => {
+  pushToast: ({ title, message, type = 'info', duration = 4000, openOutput = false }) => {
     const id = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
-    const toast = { id, title, message, type, duration };
+    const toast = { id, title, message, type, duration, openOutput };
     set((state) => ({ toasts: [...state.toasts, toast] }));
 
     setTimeout(() => {

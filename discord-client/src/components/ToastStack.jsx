@@ -17,6 +17,11 @@ const typeAccent = {
 export default function ToastStack() {
   const toasts = useToastStore((state) => state.toasts);
   const dismissToast = useToastStore((state) => state.dismissToast);
+  const openOutputFolder = () => {
+    if (window?.desktop?.openOutputFolder) {
+      window.desktop.openOutputFolder();
+    }
+  };
 
   return (
     <div className="toast-stack">
@@ -24,20 +29,33 @@ export default function ToastStack() {
         {toasts.map((toast) => (
           <motion.div
             key={toast.id}
-            className="toast-item glass-surface"
+            className={`toast-item glass-surface${toast.openOutput ? ' toast-clickable' : ''}`}
             variants={toastVariants}
             initial="initial"
             animate="animate"
             exit="exit"
             transition={{ duration: 0.2 }}
+            onClick={() => {
+              if (toast.openOutput) {
+                openOutputFolder();
+              }
+            }}
+            role={toast.openOutput ? 'button' : undefined}
+            tabIndex={toast.openOutput ? 0 : undefined}
           >
             <div className="toast-indicator" style={{ backgroundColor: typeAccent[toast.type] }} />
             <div className="toast-body">
               {toast.title && <p className="toast-title">{toast.title}</p>}
               <p className="toast-message">{toast.message}</p>
             </div>
-            <button className="toast-close" onClick={() => dismissToast(toast.id)}>
-              ×
+            <button
+              className="toast-close"
+              onClick={(event) => {
+                event.stopPropagation();
+                dismissToast(toast.id);
+              }}
+            >
+              A-
             </button>
           </motion.div>
         ))}

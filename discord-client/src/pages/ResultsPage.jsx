@@ -66,7 +66,12 @@ export default function ResultsPage() {
     try {
       const response = await api.get(`/reports/history/${resultId}/pdf`);
       if (response.data?.file) {
-        toast({ type: 'success', title: 'Saved', message: `${response.data.file} saved to output folder.` });
+        toast({
+          type: 'success',
+          title: 'Saved',
+          message: `${response.data.file} saved to output folder.`,
+          openOutput: true,
+        });
       }
     } catch (error) {
       toast({
@@ -83,7 +88,12 @@ export default function ResultsPage() {
         params: { session, class_sec: classSec, term },
       });
       if (response.data?.file) {
-        toast({ type: 'success', title: 'Saved', message: `${response.data.file} saved to output folder.` });
+        toast({
+          type: 'success',
+          title: 'Saved',
+          message: `${response.data.file} saved to output folder.`,
+          openOutput: true,
+        });
       }
     } catch (error) {
       toast({

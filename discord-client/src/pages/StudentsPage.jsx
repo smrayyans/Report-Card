@@ -6,7 +6,7 @@ import StudentEditModal from '../components/StudentEditModal';
 import FileUploadButton from '../components/FileUploadButton';
 import useStudentStore from '../store/studentStore';
 import useToast from '../hooks/useToast';
-import { getApiBase } from '../services/api';
+import api from '../services/api';
 
 const statusOptions = ['All', 'Active', 'Left', 'Inactive'];
 
@@ -96,7 +96,43 @@ export default function StudentsPage() {
   };
 
   const downloadSample = () => {
-    window.open(`${getApiBase()}/students/sample`, '_blank', 'noopener');
+    api
+      .get('/students/sample')
+      .then((response) => {
+        const file = response?.data?.file;
+        toast({
+          type: 'success',
+          title: 'Sample saved',
+          message: file ? `${file} saved to output folder.` : 'Sample Excel saved to output folder.',
+          openOutput: true,
+        });
+      })
+      .catch((error) => {
+        toast({
+          type: 'error',
+          title: 'Sample failed',
+          message: error.response?.data?.detail || 'Unable to save sample Excel.',
+        });
+      });
+  };
+
+  const downloadAllStudents = async () => {
+    try {
+      const response = await api.get('/students/export');
+      const file = response?.data?.file;
+      toast({
+        type: 'success',
+        title: 'Exported',
+        message: file ? `${file} saved to output folder.` : 'Student export saved to output folder.',
+        openOutput: true,
+      });
+    } catch (error) {
+      toast({
+        type: 'error',
+        title: 'Export failed',
+        message: error.response?.data?.detail || 'Unable to export students.',
+      });
+    }
   };
 
   const resetFilters = () => {
@@ -133,7 +169,12 @@ export default function StudentsPage() {
     try {
       const response = await downloadReportHistoryPdf(resultId);
       if (response?.file) {
-        toast({ type: 'success', title: 'Saved', message: `${response.file} saved to output folder.` });
+        toast({
+          type: 'success',
+          title: 'Saved',
+          message: `${response.file} saved to output folder.`,
+          openOutput: true,
+        });
       }
     } catch (error) {
       toast({
@@ -304,22 +345,13 @@ export default function StudentsPage() {
           </button>
         </div>
         <div className="action-row">
+          <button className="btn btn-ghost" onClick={downloadAllStudents}>
+            Export Students
+          </button>
           <button className="btn btn-ghost" onClick={downloadSample}>
             Sample Excel
           </button>
           <FileUploadButton label="Import Excel" onSelect={handleImport} loading={importLoading} />
-          <button
-            className="btn btn-primary"
-            onClick={() => {
-              if (!selected) {
-                toast({ type: 'warning', title: 'Pick a student', message: 'Select a row first to view details.' });
-                return;
-              }
-              setDrawerOpen(true);
-            }}
-          >
-            View Student
-          </button>
         </div>
         <StudentTable
           students={students}

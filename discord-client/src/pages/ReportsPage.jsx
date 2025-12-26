@@ -377,12 +377,22 @@ export default function ReportsPage() {
       if (detail.type === 'queue' && detail.queue_id) {
         const response = await api.get(`/reports/queue/${detail.queue_id}/pdf`);
         if (response.data?.file) {
-          toast({ type: 'success', title: 'Saved', message: `${response.data.file} saved to output folder.` });
+          toast({
+            type: 'success',
+            title: 'Saved',
+            message: `${response.data.file} saved to output folder.`,
+            openOutput: true,
+          });
         }
       } else if (detail.type === 'history' && detail.result_id) {
         const response = await api.get(`/reports/history/${detail.result_id}/pdf`);
         if (response.data?.file) {
-          toast({ type: 'success', title: 'Saved', message: `${response.data.file} saved to output folder.` });
+          toast({
+            type: 'success',
+            title: 'Saved',
+            message: `${response.data.file} saved to output folder.`,
+            openOutput: true,
+          });
         }
       } else {
         return;
@@ -416,6 +426,7 @@ export default function ReportsPage() {
         type: 'success',
         title: 'Batch exported',
         message: 'All saved reports were compiled into a single PDF.',
+        openOutput: true,
       });
     } catch (error) {
       toast({

@@ -51,6 +51,22 @@ from backend.core.db_config import load_db_config, save_db_config
 SAMPLE_EXCEL = BASE_DIR / "student_sample.xlsx"
 FILTERS_FILE = BASE_DIR / "settings" / "filters.json"
 REMARKS_FILE = BASE_DIR / "settings" / "remarks.json"
+REQUIRED_STUDENT_COLUMNS = [
+    "gr_no",
+    "student_name",
+    "father_name",
+    "current_class_sec",
+    "current_session",
+    "date_of_birth",
+    "contact_number_resident",
+    "contact_number_neighbour",
+    "contact_number_relative",
+    "contact_number_other1",
+    "contact_number_other2",
+    "contact_number_other3",
+    "contact_number_other4",
+    "address",
+]
 
 def get_connection():
     config = load_db_config()
@@ -426,6 +442,50 @@ def student_stats():
     return {"total": total, "active": active, "inactive": inactive}
 
 
+@app.get("/students/sample")
+def sample_excel():
+    output_dir = PDFManager.OUTPUT_DIR
+    output_dir.mkdir(parents=True, exist_ok=True)
+    filename = "student_sample.xlsx"
+    file_path = output_dir / filename
+    sample = pd.DataFrame(columns=REQUIRED_STUDENT_COLUMNS)
+    sample.to_excel(file_path, index=False)
+    return {
+        "message": "Sample Excel saved",
+        "file": filename,
+    }
+
+
+@app.get("/students/export")
+def export_students():
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
+    cursor.execute(
+        """
+        SELECT gr_no, student_name, father_name, current_class_sec, current_session,
+               date_of_birth, contact_number_resident, contact_number_neighbour,
+               contact_number_relative, contact_number_other1, contact_number_other2,
+               contact_number_other3, contact_number_other4, address
+        FROM students
+        ORDER BY LOWER(student_name)
+        """
+    )
+    rows = cursor.fetchall()
+    conn.close()
+
+    data = [row_to_dict(row) for row in rows]
+    df = pd.DataFrame(data, columns=REQUIRED_STUDENT_COLUMNS)
+    output_dir = PDFManager.OUTPUT_DIR
+    output_dir.mkdir(parents=True, exist_ok=True)
+    filename = f"students_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    file_path = output_dir / filename
+    df.to_excel(file_path, index=False)
+    return {
+        "message": "Students exported",
+        "file": filename,
+    }
+
+
 @app.get("/students/{gr_no}")
 def student_detail(gr_no: str):
     conn = get_connection()
@@ -577,22 +637,7 @@ async def import_students(file: UploadFile = File(...)):
     except Exception as exc:  # pragma: no cover - pandas raises many error types
         raise HTTPException(status_code=400, detail=f"Unable to read Excel file: {exc}") from exc
 
-    required_columns = [
-        "gr_no",
-        "student_name",
-        "current_class_sec",
-        "address",
-        "contact_number_resident",
-        "contact_number_neighbour",
-        "contact_number_relative",
-        "contact_number_other1",
-        "contact_number_other2",
-        "contact_number_other3",
-        "contact_number_other4",
-        "date_of_birth",
-        "joining_date",
-    ]
-    for column in required_columns:
+    for column in REQUIRED_STUDENT_COLUMNS:
         if column not in df.columns:
             raise HTTPException(status_code=400, detail=f"Missing column: {column}")
 
@@ -606,16 +651,16 @@ async def import_students(file: UploadFile = File(...)):
             cursor.execute(
                 """
                 INSERT INTO students (
-                    gr_no, student_name, current_class_sec, address,
-                    contact_number_resident, contact_number_neighbour, contact_number_relative,
-                    contact_number_other1, contact_number_other2, contact_number_other3, 
-                    contact_number_other4, date_of_birth, joining_date
+                    gr_no, student_name, father_name, current_class_sec, current_session,
+                    date_of_birth, contact_number_resident, contact_number_neighbour,
+                    contact_number_relative, contact_number_other1, contact_number_other2,
+                    contact_number_other3, contact_number_other4, address
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 tuple(
                     str(row.get(column)) if pd.notna(row.get(column)) else None
-                    for column in required_columns
+                    for column in REQUIRED_STUDENT_COLUMNS
                 ),
             )
             success += 1
@@ -628,33 +673,6 @@ async def import_students(file: UploadFile = File(...)):
     conn.close()
 
     return {"imported": success, "errors": errors}
-
-
-@app.get("/students/sample")
-def sample_excel():
-    if not SAMPLE_EXCEL.exists():
-        SAMPLE_EXCEL.parent.mkdir(parents=True, exist_ok=True)
-        sample = pd.DataFrame(
-            [
-                {
-                    "gr_no": "00001",
-                    "student_name": "Student Name",
-                    "current_class_sec": "KGIIA",
-                    "address": "Address",
-                    "contact_number_resident": "0000000000",
-                    "contact_number_neighbour": "",
-                    "contact_number_relative": "",
-                    "contact_number_other1": "",
-                    "contact_number_other2": "",
-                    "contact_number_other3": "",
-                    "contact_number_other4": "",
-                    "date_of_birth": "2015-01-01",
-                    "joining_date": "2020-06-01",
-                }
-            ]
-        )
-        sample.to_excel(SAMPLE_EXCEL, index=False)
-    return FileResponse(SAMPLE_EXCEL, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
 @app.get("/subjects")

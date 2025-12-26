@@ -28,4 +28,5 @@ contextBridge.exposeInMainWorld('desktop', {
     check: () => ipcRenderer.invoke('update-check'),
     install: () => ipcRenderer.invoke('update-install'),
   },
+  openOutputFolder: () => ipcRenderer.invoke('open-output-folder'),
 });
