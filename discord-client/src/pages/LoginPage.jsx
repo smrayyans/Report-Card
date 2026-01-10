@@ -102,17 +102,23 @@ export default function LoginPage() {
   }, []);
 
   useEffect(() => {
-    if (connectionMode === 'host') {
-      const hostname = window.location.hostname && window.location.hostname !== '' ? window.location.hostname : '127.0.0.1';
-      const nextBase = setApiBase(`http://${hostname}:8000`);
-      setServerInput(nextBase);
-      return;
+    if (serverReady) {
+      const fetchConfig = async () => {
+        try {
+          const { data } = await api.get('/db/config');
+          if (data?.host && data.host !== '127.0.0.1' && data.host !== 'localhost') {
+            setConnectionMode('client');
+            setHostIpInput(data.host);
+          } else {
+            setConnectionMode('host');
+          }
+        } catch (error) {
+          console.error('Failed to sync initial DB config:', error);
+        }
+      };
+      fetchConfig();
     }
-    if (hostIpInput.trim()) {
-      const nextBase = setApiBase(`http://${hostIpInput.trim()}:8000`);
-      setServerInput(nextBase);
-    }
-  }, [connectionMode, hostIpInput]);
+  }, [serverReady]);
 
   const handleTestConnection = async () => {
     try {
@@ -144,20 +150,34 @@ export default function LoginPage() {
   };
 
   const handleSaveConnection = async () => {
+    // 1. Save UI preferences locally
     localStorage.setItem('faizan-connection-mode', connectionMode);
     localStorage.setItem('faizan-host-ip', hostIpInput.trim());
+    
     if (window?.desktop?.saveConnectionConfig) {
-      const result = await window.desktop.saveConnectionConfig({
+      await window.desktop.saveConnectionConfig({
         mode: connectionMode,
         hostIp: hostIpInput.trim(),
         updatedAt: new Date().toISOString(),
       });
-      if (result?.ok === false) {
-        pushToast({ type: 'error', title: 'Save failed', message: result.error || 'Unable to save config.' });
+    }
+
+    // 2. Update Backend DB Config
+    try {
+      const { data: currentConfig } = await api.get('/db/config');
+      const newHost = connectionMode === 'host' ? '127.0.0.1' : hostIpInput.trim();
+      
+      if (!newHost) {
+        pushToast({ type: 'warning', title: 'Invalid IP', message: 'Please enter a valid Host IP.' });
         return;
       }
+
+      await api.put('/db/config', { ...currentConfig, host: newHost });
+      pushToast({ type: 'success', title: 'Connection Saved', message: `Database host set to ${newHost}` });
+    } catch (error) {
+      console.error(error);
+      pushToast({ type: 'error', title: 'Save Failed', message: 'Could not update backend configuration.' });
     }
-    pushToast({ type: 'success', title: 'Connection saved', message: 'Startup mode saved.' });
   };
 
   const handleSubmit = async (event) => {
