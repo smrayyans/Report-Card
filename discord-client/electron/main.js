@@ -19,10 +19,26 @@ const BACKEND_EXE = path.join(process.resourcesPath, 'backend', 'report-backend.
 const SHOULD_START_BACKEND = process.env.FAIZAN_START_BACKEND !== '0';
 const HEALTH_URL = 'http://127.0.0.1:8000/health';
 const SETTINGS_DIR = app.isPackaged ? app.getPath('userData') : path.join(ROOT_DIR, 'settings');
+const DB_CONFIG = path.join(SETTINGS_DIR, 'db_config.json');
+const DEFAULT_OUTPUT_DIR = app.isPackaged ? path.join(SETTINGS_DIR, 'output') : path.join(ROOT_DIR, 'output');
 const CONNECTION_CONFIG = path.join(SETTINGS_DIR, 'connection_config.json');
 
+const getConfiguredOutputDir = () => {
+  try {
+    if (!fs.existsSync(DB_CONFIG)) {
+      return null;
+    }
+    const raw = fs.readFileSync(DB_CONFIG, 'utf-8');
+    const data = JSON.parse(raw);
+    const outputDir = typeof data?.output_dir === 'string' ? data.output_dir.trim() : '';
+    return outputDir || null;
+  } catch (error) {
+    return null;
+  }
+};
+
 const getOutputDir = () => {
-  return app.isPackaged ? path.join(process.resourcesPath, 'output') : path.join(ROOT_DIR, 'output');
+  return getConfiguredOutputDir() || DEFAULT_OUTPUT_DIR;
 };
 
 function startPythonServer() {
@@ -32,6 +48,8 @@ function startPythonServer() {
     ...process.env,
     PYTHONPATH: `${process.env.PYTHONPATH ? `${process.env.PYTHONPATH}${path.delimiter}` : ''}${ROOT_DIR}`,
     FAIZAN_BASE_DIR: app.isPackaged ? process.resourcesPath : ROOT_DIR,
+    FAIZAN_DB_CONFIG_DIR: SETTINGS_DIR,
+    FAIZAN_OUTPUT_DIR: DEFAULT_OUTPUT_DIR,
   };
   if (app.isPackaged && fs.existsSync(BACKEND_EXE)) {
     pythonServer = spawn(BACKEND_EXE, [], { stdio: 'inherit', shell: false, env });

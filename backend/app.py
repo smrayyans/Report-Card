@@ -276,6 +276,7 @@ class DbConfigPayload(BaseModel):
     dbname: str
     user: str
     password: str
+    output_dir: Optional[str] = None
 
 
 class UserCreatePayload(BaseModel):
@@ -436,7 +437,7 @@ def get_db_config():
 
 @app.put("/db/config")
 def update_db_config(payload: DbConfigPayload):
-    return save_db_config(payload.dict())
+    return save_db_config(payload.dict(exclude_none=True))
 
 
 @app.post("/auth/login")
@@ -617,8 +618,7 @@ def student_stats():
 
 @app.get("/students/sample")
 def sample_excel():
-    output_dir = PDFManager.OUTPUT_DIR
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = PDFManager.ensure_output_dir()
     filename = "student_sample.xlsx"
     file_path = output_dir / filename
     sample = pd.DataFrame(columns=REQUIRED_STUDENT_COLUMNS)
@@ -648,8 +648,7 @@ def export_students():
 
     data = [row_to_dict(row) for row in rows]
     df = pd.DataFrame(data, columns=REQUIRED_STUDENT_COLUMNS)
-    output_dir = PDFManager.OUTPUT_DIR
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = PDFManager.ensure_output_dir()
     filename = f"students_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     file_path = output_dir / filename
     df.to_excel(file_path, index=False)
@@ -1944,6 +1943,7 @@ def export_saved_reports():
             template_name="report_batch.html",
         )
         if not success:
+            logging.error("Report batch export failed: %s", message)
             raise HTTPException(status_code=500, detail=message)
 
         insert_rows = [
@@ -1974,6 +1974,11 @@ def export_saved_reports():
             "file": pdf_file.name,
             "download_url": f"/reports/files/{pdf_file.name}",
         }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logging.exception("Unexpected error exporting report batch")
+        raise HTTPException(status_code=500, detail=f"Unable to export reports: {exc}")
     finally:
         conn.close()
 
@@ -2061,6 +2066,7 @@ def export_saved_diagnostics():
             css_name="diagnostics_styles.css",
         )
         if not success:
+            logging.error("Diagnostics batch export failed: %s", message)
             raise HTTPException(status_code=500, detail=message)
 
         cursor.execute("DELETE FROM diagnostics_queue")
@@ -2072,6 +2078,11 @@ def export_saved_diagnostics():
             "file": pdf_file.name,
             "download_url": f"/reports/files/{pdf_file.name}",
         }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logging.exception("Unexpected error exporting diagnostics batch")
+        raise HTTPException(status_code=500, detail=f"Unable to export diagnostics: {exc}")
     finally:
         conn.close()
 
@@ -2082,6 +2093,7 @@ def generate_pdf(payload: ReportRequest):
     filename = f"{data['student_name'].replace(' ', '_')}_ReportCard_{data['session']}"
     success, message, pdf_path = PDFManager.generate_pdf(filename, data)
     if not success:
+        logging.error("Report PDF export failed: %s", message)
         raise HTTPException(status_code=500, detail=message)
 
     pdf_file = Path(pdf_path)
@@ -2293,7 +2305,7 @@ def preview_diagnostics_sample():
 @app.get("/reports/files/{file_name}")
 def download_pdf(file_name: str):
     safe_name = Path(file_name).name
-    pdf_path = PDFManager.OUTPUT_DIR / safe_name
+    pdf_path = PDFManager.get_output_dir() / safe_name
     if not pdf_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(pdf_path, media_type="application/pdf", filename=safe_name)

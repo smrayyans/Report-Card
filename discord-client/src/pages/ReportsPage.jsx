@@ -8,7 +8,7 @@ import useToast from '../hooks/useToast';
 import api, { getApiBase } from '../services/api';
 import { gradeFromPercentage } from '../utils/formatters';
 
-const termOptions = ['Mid Year', 'Annual Year'];
+const DEFAULT_TERM_OPTIONS = ['Mid Year', 'Annual Year'];
 const rankOptions = ['N/A', ...Array.from({ length: 10 }, (_, idx) => `${idx + 1}`)];
 const conductOptions = ['Excellent', 'Good', 'Fair', 'Needs Work'];
 const performanceOptions = ['Excellent', 'Good', 'Average', 'Needs Support'];
@@ -45,7 +45,7 @@ const computeRow = (row) => {
 export default function ReportsPage() {
   const toast = useToast();
   const [form, setForm] = useState({
-    term: termOptions[0],
+    term: DEFAULT_TERM_OPTIONS[0],
     session: '',
     grNo: '',
     studentName: '',
@@ -83,6 +83,20 @@ export default function ReportsPage() {
   const clearQueue = useReportStore((state) => state.clearQueue);
   const exportReports = useReportStore((state) => state.exportReports);
   const [editingQueueId, setEditingQueueId] = useState(null);
+
+  const baseTermOptions = useMemo(() => {
+    const configTerms = Array.isArray(config?.terms) ? config.terms.filter(Boolean) : [];
+    return configTerms.length ? configTerms : DEFAULT_TERM_OPTIONS;
+  }, [config?.terms]);
+
+  const termOptions = useMemo(() => {
+    if (form.term && !baseTermOptions.includes(form.term)) {
+      return [form.term, ...baseTermOptions];
+    }
+    return baseTermOptions;
+  }, [baseTermOptions, form.term]);
+
+  const defaultTerm = baseTermOptions[0] || DEFAULT_TERM_OPTIONS[0];
 
   useEffect(() => {
     fetchInitial().catch(() =>
@@ -287,7 +301,7 @@ export default function ReportsPage() {
     const payload = item.payload || {};
     setEditingQueueId(item.id);
     setForm({
-      term: payload.term || termOptions[0],
+      term: payload.term || defaultTerm,
       session: payload.session || config?.default_session || '',
       grNo: payload.gr_no || '',
       studentName: payload.student_name || '',
@@ -455,7 +469,7 @@ export default function ReportsPage() {
   const resetForm = () => {
     setEditingQueueId(null);
     setForm({
-      term: termOptions[0],
+      term: defaultTerm,
       session: config?.default_session || config?.sessions?.[0] || '',
       grNo: '',
       studentName: '',

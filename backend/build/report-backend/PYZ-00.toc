@@ -851,6 +851,290 @@
    'C:\\Users\\Rayyan '
    'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\_pydecimal.py',
    'PYMODULE'),
+  ('_pytest',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\__init__.py',
+   'PYMODULE'),
+  ('_pytest._argcomplete',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\_argcomplete.py',
+   'PYMODULE'),
+  ('_pytest._code',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\_code\\__init__.py',
+   'PYMODULE'),
+  ('_pytest._code.code',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\_code\\code.py',
+   'PYMODULE'),
+  ('_pytest._code.source',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\_code\\source.py',
+   'PYMODULE'),
+  ('_pytest._io',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\_io\\__init__.py',
+   'PYMODULE'),
+  ('_pytest._io.pprint',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\_io\\pprint.py',
+   'PYMODULE'),
+  ('_pytest._io.saferepr',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\_io\\saferepr.py',
+   'PYMODULE'),
+  ('_pytest._io.terminalwriter',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\_io\\terminalwriter.py',
+   'PYMODULE'),
+  ('_pytest._io.wcwidth',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\_io\\wcwidth.py',
+   'PYMODULE'),
+  ('_pytest._py',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\_py\\__init__.py',
+   'PYMODULE'),
+  ('_pytest._py.error',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\_py\\error.py',
+   'PYMODULE'),
+  ('_pytest._py.path',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\_py\\path.py',
+   'PYMODULE'),
+  ('_pytest._version',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\_version.py',
+   'PYMODULE'),
+  ('_pytest.assertion',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\assertion\\__init__.py',
+   'PYMODULE'),
+  ('_pytest.assertion.rewrite',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\assertion\\rewrite.py',
+   'PYMODULE'),
+  ('_pytest.assertion.truncate',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\assertion\\truncate.py',
+   'PYMODULE'),
+  ('_pytest.assertion.util',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\assertion\\util.py',
+   'PYMODULE'),
+  ('_pytest.cacheprovider',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\cacheprovider.py',
+   'PYMODULE'),
+  ('_pytest.capture',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\capture.py',
+   'PYMODULE'),
+  ('_pytest.compat',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\compat.py',
+   'PYMODULE'),
+  ('_pytest.config',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\config\\__init__.py',
+   'PYMODULE'),
+  ('_pytest.config.argparsing',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\config\\argparsing.py',
+   'PYMODULE'),
+  ('_pytest.config.compat',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\config\\compat.py',
+   'PYMODULE'),
+  ('_pytest.config.exceptions',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\config\\exceptions.py',
+   'PYMODULE'),
+  ('_pytest.config.findpaths',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\config\\findpaths.py',
+   'PYMODULE'),
+  ('_pytest.debugging',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\debugging.py',
+   'PYMODULE'),
+  ('_pytest.deprecated',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\deprecated.py',
+   'PYMODULE'),
+  ('_pytest.doctest',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\doctest.py',
+   'PYMODULE'),
+  ('_pytest.faulthandler',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\faulthandler.py',
+   'PYMODULE'),
+  ('_pytest.fixtures',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\fixtures.py',
+   'PYMODULE'),
+  ('_pytest.freeze_support',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\freeze_support.py',
+   'PYMODULE'),
+  ('_pytest.helpconfig',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\helpconfig.py',
+   'PYMODULE'),
+  ('_pytest.hookspec',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\hookspec.py',
+   'PYMODULE'),
+  ('_pytest.junitxml',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\junitxml.py',
+   'PYMODULE'),
+  ('_pytest.legacypath',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\legacypath.py',
+   'PYMODULE'),
+  ('_pytest.logging',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\logging.py',
+   'PYMODULE'),
+  ('_pytest.main',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\main.py',
+   'PYMODULE'),
+  ('_pytest.mark',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\mark\\__init__.py',
+   'PYMODULE'),
+  ('_pytest.mark.expression',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\mark\\expression.py',
+   'PYMODULE'),
+  ('_pytest.mark.structures',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\mark\\structures.py',
+   'PYMODULE'),
+  ('_pytest.monkeypatch',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\monkeypatch.py',
+   'PYMODULE'),
+  ('_pytest.nodes',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\nodes.py',
+   'PYMODULE'),
+  ('_pytest.outcomes',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\outcomes.py',
+   'PYMODULE'),
+  ('_pytest.pastebin',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\pastebin.py',
+   'PYMODULE'),
+  ('_pytest.pathlib',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\pathlib.py',
+   'PYMODULE'),
+  ('_pytest.pytester',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\pytester.py',
+   'PYMODULE'),
+  ('_pytest.pytester_assertions',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\pytester_assertions.py',
+   'PYMODULE'),
+  ('_pytest.python',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\python.py',
+   'PYMODULE'),
+  ('_pytest.python_api',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\python_api.py',
+   'PYMODULE'),
+  ('_pytest.raises',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\raises.py',
+   'PYMODULE'),
+  ('_pytest.recwarn',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\recwarn.py',
+   'PYMODULE'),
+  ('_pytest.reports',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\reports.py',
+   'PYMODULE'),
+  ('_pytest.runner',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\runner.py',
+   'PYMODULE'),
+  ('_pytest.scope',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\scope.py',
+   'PYMODULE'),
+  ('_pytest.setuponly',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\setuponly.py',
+   'PYMODULE'),
+  ('_pytest.setupplan',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\setupplan.py',
+   'PYMODULE'),
+  ('_pytest.skipping',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\skipping.py',
+   'PYMODULE'),
+  ('_pytest.stash',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\stash.py',
+   'PYMODULE'),
+  ('_pytest.stepwise',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\stepwise.py',
+   'PYMODULE'),
+  ('_pytest.subtests',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\subtests.py',
+   'PYMODULE'),
+  ('_pytest.terminal',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\terminal.py',
+   'PYMODULE'),
+  ('_pytest.terminalprogress',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\terminalprogress.py',
+   'PYMODULE'),
+  ('_pytest.threadexception',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\threadexception.py',
+   'PYMODULE'),
+  ('_pytest.timing',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\timing.py',
+   'PYMODULE'),
+  ('_pytest.tmpdir',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\tmpdir.py',
+   'PYMODULE'),
+  ('_pytest.tracemalloc',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\tracemalloc.py',
+   'PYMODULE'),
+  ('_pytest.unittest',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\unittest.py',
+   'PYMODULE'),
+  ('_pytest.unraisableexception',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\unraisableexception.py',
+   'PYMODULE'),
+  ('_pytest.warning_types',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\warning_types.py',
+   'PYMODULE'),
+  ('_pytest.warnings',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\_pytest\\warnings.py',
+   'PYMODULE'),
   ('_sitebuiltins',
    'C:\\Users\\Rayyan '
    'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\_sitebuiltins.py',
@@ -3663,6 +3947,18 @@
   ('importlib.util',
    'C:\\Users\\Rayyan '
    'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\importlib\\util.py',
+   'PYMODULE'),
+  ('iniconfig',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\iniconfig\\__init__.py',
+   'PYMODULE'),
+  ('iniconfig._parse',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\iniconfig\\_parse.py',
+   'PYMODULE'),
+  ('iniconfig.exceptions',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\iniconfig\\exceptions.py',
    'PYMODULE'),
   ('inspect',
    'C:\\Users\\Rayyan '
@@ -7137,6 +7433,38 @@
    'C:\\Users\\Rayyan '
    'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\plistlib.py',
    'PYMODULE'),
+  ('pluggy',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\pluggy\\__init__.py',
+   'PYMODULE'),
+  ('pluggy._callers',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\pluggy\\_callers.py',
+   'PYMODULE'),
+  ('pluggy._hooks',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\pluggy\\_hooks.py',
+   'PYMODULE'),
+  ('pluggy._manager',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\pluggy\\_manager.py',
+   'PYMODULE'),
+  ('pluggy._result',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\pluggy\\_result.py',
+   'PYMODULE'),
+  ('pluggy._tracing',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\pluggy\\_tracing.py',
+   'PYMODULE'),
+  ('pluggy._version',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\pluggy\\_version.py',
+   'PYMODULE'),
+  ('pluggy._warnings',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\pluggy\\_warnings.py',
+   'PYMODULE'),
   ('pprint',
    'C:\\Users\\Rayyan '
    'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pprint.py',
@@ -7716,6 +8044,10 @@
   ('pure_eval.version',
    'C:\\Users\\Rayyan '
    'Shah\\AppData\\Roaming\\Python\\Python312\\site-packages\\pure_eval\\version.py',
+   'PYMODULE'),
+  ('py',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\py.py',
    'PYMODULE'),
   ('py_compile',
    'C:\\Users\\Rayyan '
@@ -9680,6 +10012,10 @@
   ('pyphen',
    'C:\\Users\\Rayyan '
    'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\pyphen\\__init__.py',
+   'PYMODULE'),
+  ('pytest',
+   'C:\\Users\\Rayyan '
+   'Shah\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\pytest\\__init__.py',
    'PYMODULE'),
   ('pytz',
    'C:\\Users\\Rayyan '

@@ -4,6 +4,8 @@ import useToast from '../hooks/useToast';
 import { getApiBase, setApiBase } from '../services/api';
 import api from '../services/api';
 
+const DEFAULT_TERMS = ['Mid Year', 'Annual Year'];
+
 const toLines = (items = []) => items.join('\n');
 const fromLines = (value) =>
   value
@@ -28,6 +30,7 @@ export default function SettingsPage() {
   const clearResults = useReportStore((state) => state.clearResults);
   const [draft, setDraft] = useState(config);
   const [sessionsInput, setSessionsInput] = useState('');
+  const [termsInput, setTermsInput] = useState('');
   const [marksInput, setMarksInput] = useState('');
   const [newSubjectName, setNewSubjectName] = useState('');
   const [newSubjectType, setNewSubjectType] = useState('Core');
@@ -47,6 +50,7 @@ export default function SettingsPage() {
     dbname: 'report_system',
     user: 'postgres',
     password: 'rayyanshah04',
+    output_dir: '',
   });
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
@@ -110,6 +114,8 @@ export default function SettingsPage() {
     if (config) {
       setDraft(config);
       setSessionsInput(toLines(config.sessions || []));
+      const terms = config.terms?.length ? config.terms : DEFAULT_TERMS;
+      setTermsInput(toLines(terms));
       setMarksInput(toLines((config.max_marks_options || []).map(String)));
     }
   }, [config]);
@@ -128,6 +134,7 @@ export default function SettingsPage() {
     const nextConfig = {
       ...draft,
       sessions: fromLines(sessionsInput),
+      terms: fromLines(termsInput),
       max_marks_options: fromLines(marksInput).map((entry) => Number(entry) || 0).filter((value) => value > 0),
     };
     await saveConfig(nextConfig);
@@ -362,6 +369,10 @@ export default function SettingsPage() {
               <label>
                 <span>Sessions (one per line)</span>
                 <textarea className="input dark" rows={4} value={sessionsInput} onChange={(event) => setSessionsInput(event.target.value)} />
+              </label>
+              <label>
+                <span>Terms (one per line)</span>
+                <textarea className="input dark" rows={4} value={termsInput} onChange={(event) => setTermsInput(event.target.value)} />
               </label>
               <label>
                 <span>Default Session</span>
@@ -1000,6 +1011,15 @@ export default function SettingsPage() {
                       {showDbPassword ? 'Hide' : 'Show'}
                     </button>
                   </div>
+                </label>
+                <label>
+                  <span>Output Folder</span>
+                  <input
+                    className="input dark"
+                    value={dbConfig.output_dir || ''}
+                    onChange={(event) => setDbConfig((prev) => ({ ...prev, output_dir: event.target.value }))}
+                    placeholder="C:\\Reports\\Output"
+                  />
                 </label>
               </div>
             </div>

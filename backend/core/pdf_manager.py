@@ -5,10 +5,12 @@ PDF Manager - Handles PDF generation from HTML templates
 from pathlib import Path
 import os
 import sys
+import logging
 from typing import Any
 
 from jinja2 import Environment, FileSystemLoader
 
+from backend.core.db_config import load_db_config
 
 class PDFManager:
     """Manages PDF generation using Jinja2 templates and WeasyPrint"""
@@ -27,9 +29,19 @@ class PDFManager:
     OUTPUT_DIR = PROJECT_ROOT / "output"
 
     @staticmethod
-    def ensure_output_dir():
+    def get_output_dir() -> Path:
+        config = load_db_config()
+        output_dir = (config.get("output_dir") or "").strip()
+        if output_dir:
+            return Path(output_dir)
+        return PDFManager.OUTPUT_DIR
+
+    @staticmethod
+    def ensure_output_dir() -> Path:
         """Create output directory if it doesn't exist"""
-        PDFManager.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        output_dir = PDFManager.get_output_dir()
+        output_dir.mkdir(parents=True, exist_ok=True)
+        return output_dir
 
     @staticmethod
     def get_font_size(text: str) -> int:
@@ -109,6 +121,7 @@ class PDFManager:
             return html_content
 
         except Exception as exc:  # pragma: no cover
+            logging.exception("Error rendering PDF template")
             raise Exception(f"Error rendering template: {exc}") from exc
 
     @staticmethod
@@ -132,15 +145,15 @@ class PDFManager:
         try:
             from weasyprint import HTML
 
-            PDFManager.ensure_output_dir()
+            output_dir = PDFManager.ensure_output_dir()
             html_content = PDFManager.render_template(data, template_name, css_name=css_name)
 
-            temp_html = PDFManager.OUTPUT_DIR / "temp_report.html"
+            temp_html = output_dir / "temp_report.html"
             with open(temp_html, 'w', encoding='utf-8') as handle:
                 handle.write(html_content)
 
             pdf_filename = f"{filename}.pdf"
-            pdf_path = PDFManager.OUTPUT_DIR / pdf_filename
+            pdf_path = output_dir / pdf_filename
 
             HTML(str(temp_html)).write_pdf(str(pdf_path))
             temp_html.unlink()
@@ -148,6 +161,8 @@ class PDFManager:
             return True, "PDF created successfully!", str(pdf_path)
 
         except ImportError:
+            logging.error("WeasyPrint not installed.")
             return False, "WeasyPrint not installed. Run: pip install weasyprint", None
         except Exception as exc:  # pragma: no cover
+            logging.exception("Error generating PDF")
             return False, f"Error generating PDF: {exc}", None
